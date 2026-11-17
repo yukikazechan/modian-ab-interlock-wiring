@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>魔点AB门互锁控制器 · 双门互锁接线标准图（在线编辑器）</title>
+  <link rel="icon" href="data:," />
   <style>
     :root {
       --bg-app: #0f172a;
@@ -289,13 +290,117 @@
     }
 
     svg#wiring-diagram.has-wire-highlight .wire-group:not(.is-highlighted) {
-      opacity: 0.18;
+      opacity: 0.2;
     }
 
-    svg#wiring-diagram .wire-group.is-highlighted path,
-    svg#wiring-diagram .wire-group.is-highlighted line {
-      stroke-width: 3.8px !important;
-      filter: drop-shadow(0 0 4px rgba(2, 132, 199, 0.5));
+    svg#wiring-diagram .wire-group .wire-hit-area {
+      fill: none;
+      stroke: transparent;
+      stroke-width: 14px;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      pointer-events: stroke;
+      cursor: pointer;
+    }
+
+    svg#wiring-diagram .wire-group .wire-halo {
+      fill: none;
+      stroke: rgba(2, 132, 199, 0.28);
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+
+    svg#wiring-diagram .wire-group:hover .wire-halo {
+      opacity: 0.65;
+    }
+
+    svg#wiring-diagram .wire-group.is-highlighted .wire-halo {
+      opacity: 1;
+      stroke: rgba(2, 132, 199, 0.42);
+    }
+
+    svg#wiring-diagram .wire-group.is-highlighted .wire-main-path {
+      filter: drop-shadow(0 0 3px rgba(2, 132, 199, 0.45));
+    }
+
+    svg#wiring-diagram .wire-label-group {
+      cursor: grab;
+    }
+
+    svg#wiring-diagram .wire-label-group:active {
+      cursor: grabbing;
+    }
+
+    /* 画线模式与连线手柄 */
+    body.draw-mode .canvas-viewport {
+      cursor: crosshair;
+    }
+
+    body.draw-mode svg#wiring-diagram [data-module-id],
+    body.draw-mode svg#wiring-diagram .wire-group {
+      cursor: crosshair !important;
+    }
+
+    .wire-seg-handle {
+      fill: #ffffff;
+      stroke: #0284c7;
+      stroke-width: 1.8;
+      filter: drop-shadow(0 1px 3px rgba(15, 23, 42, 0.24));
+    }
+
+    .wire-seg-handle:hover {
+      fill: #e0f2fe;
+      stroke: #0369a1;
+    }
+
+    .wire-pt-handle {
+      fill: #ffffff;
+      stroke: #0284c7;
+      stroke-width: 2;
+      cursor: move;
+      filter: drop-shadow(0 1px 3px rgba(15, 23, 42, 0.24));
+    }
+
+    .wire-pt-handle:hover {
+      fill: #0284c7;
+      stroke: #ffffff;
+    }
+
+    .wire-add-pt-handle {
+      fill: #f0f9ff;
+      stroke: #0284c7;
+      stroke-width: 1.5;
+      cursor: copy;
+    }
+
+    .wire-add-pt-handle:hover {
+      fill: #bae6fd;
+    }
+
+    .terminal-snap-ring {
+      fill: rgba(14, 165, 233, 0.18);
+      stroke: #0284c7;
+      stroke-width: 2.2;
+      pointer-events: none;
+    }
+
+    .terminal-snap-dot {
+      fill: #0284c7;
+      stroke: #ffffff;
+      stroke-width: 1.6;
+      pointer-events: none;
+    }
+
+    .draw-preview-path {
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-dasharray: 6 4;
+      pointer-events: none;
+      opacity: 0.85;
     }
 
     /* 模块选中/悬停高亮外框 */
@@ -337,19 +442,21 @@
       font-weight: 700;
     }
 
-    /* 连线检视浮窗 */
+    /* 连线属性编辑浮窗 */
     .wire-inspector {
       position: absolute;
       left: 16px;
       top: 16px;
-      background: rgba(255, 255, 255, 0.96);
-      backdrop-filter: blur(8px);
+      background: rgba(255, 255, 255, 0.97);
+      backdrop-filter: blur(10px);
       border: 1px solid #cbd5e1;
-      border-radius: 10px;
+      border-radius: 12px;
       padding: 12px 14px;
-      width: 300px;
-      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.14);
-      z-index: 16;
+      width: 328px;
+      max-height: calc(100% - 88px);
+      overflow-y: auto;
+      box-shadow: 0 14px 36px rgba(15, 23, 42, 0.18);
+      z-index: 18;
       display: none;
     }
 
@@ -361,7 +468,10 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 8px;
+      gap: 8px;
+      margin-bottom: 6px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #e2e8f0;
     }
 
     .wire-inspector-title {
@@ -369,8 +479,30 @@
       align-items: center;
       gap: 8px;
       font-size: 13px;
-      font-weight: 700;
+      font-weight: 800;
       color: #0f172a;
+      min-width: 0;
+    }
+
+    .wire-inspector-title span#inspector-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .wire-kind-badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 999px;
+      background: #e0f2fe;
+      color: #0369a1;
+      flex-shrink: 0;
+    }
+
+    .wire-kind-badge.custom {
+      background: #fef3c7;
+      color: #b45309;
     }
 
     .wire-dot {
@@ -383,15 +515,178 @@
     }
 
     .wire-inspector-desc {
-      font-size: 12px;
+      font-size: 11.5px;
       color: #475569;
-      line-height: 1.5;
+      line-height: 1.45;
       margin-bottom: 10px;
+    }
+
+    .wire-prop-row {
+      margin-bottom: 10px;
+    }
+
+    .wire-prop-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #334155;
+      margin-bottom: 5px;
+    }
+
+    .wire-prop-val {
+      font-family: monospace;
+      font-size: 11px;
+      color: #0284c7;
+      font-weight: 700;
+    }
+
+    .color-swatch-bar {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+
+    .color-swatch {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 2px solid #ffffff;
+      box-shadow: 0 0 0 1px #cbd5e1;
+      cursor: pointer;
+      padding: 0;
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
+    }
+
+    .color-swatch:hover {
+      transform: scale(1.12);
+    }
+
+    .color-swatch.active {
+      box-shadow: 0 0 0 2px #0284c7;
+      transform: scale(1.1);
+    }
+
+    .seg-group {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4px;
+      background: #f1f5f9;
+      padding: 3px;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .seg-group.cols-2 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .seg-btn {
+      border: none;
+      background: transparent;
+      border-radius: 5px;
+      padding: 4px 6px;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: #475569;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.12s ease;
+    }
+
+    .seg-btn:hover {
+      color: #0f172a;
+    }
+
+    .seg-btn.active {
+      background: #ffffff;
+      color: #0284c7;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);
+    }
+
+    .wire-range {
+      width: 100%;
+      accent-color: #0284c7;
+      cursor: pointer;
+    }
+
+    .wire-label-edit-row {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+    }
+
+    .wire-label-edit-row .form-control {
+      padding: 5px 8px;
+      font-size: 12px;
     }
 
     .wire-inspector-actions {
       display: flex;
       gap: 6px;
+      flex-wrap: wrap;
+      padding-top: 8px;
+      border-top: 1px solid #e2e8f0;
+    }
+
+    .mini-btn.danger {
+      color: #dc2626;
+      border-color: #fecaca;
+      background: #fef2f2;
+    }
+
+    .mini-btn.danger:hover {
+      background: #fee2e2;
+      border-color: #f87171;
+    }
+
+    /* 画线模式浮动条 */
+    .draw-toolbar-bar {
+      position: absolute;
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.92);
+      backdrop-filter: blur(8px);
+      color: #f8fafc;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 7px 12px;
+      display: none;
+      align-items: center;
+      gap: 10px;
+      z-index: 19;
+      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.28);
+      font-size: 12px;
+      flex-wrap: wrap;
+      max-width: calc(100% - 32px);
+    }
+
+    body.draw-mode .draw-toolbar-bar {
+      display: flex;
+    }
+
+    .draw-toolbar-bar .seg-group {
+      background: #1e293b;
+      border-color: #334155;
+    }
+
+    .draw-toolbar-bar .seg-btn {
+      color: #cbd5e1;
+      padding: 3px 8px;
+    }
+
+    .draw-toolbar-bar .seg-btn.active {
+      background: #0284c7;
+      color: #ffffff;
+    }
+
+    .draw-tip-text {
+      color: #94a3b8;
+      font-size: 11.5px;
+      white-space: nowrap;
     }
 
     .mini-btn {
@@ -876,6 +1171,7 @@
       .sidebar,
       .canvas-hud,
       .wire-inspector,
+      .draw-toolbar-bar,
       .toast-container,
       .modal-overlay,
       #inline-text-editor {
@@ -932,6 +1228,10 @@
           <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 11V6a2 2 0 0 0-4 0v5"/><path d="M14 10V4a2 2 0 0 0-4 0v6"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M6 14v-1a2 2 0 0 0-4 0v2a8 8 0 0 0 16 0v-4a2 2 0 0 0-4 0"/></svg>
           平移
         </button>
+        <button class="tool-btn" id="btn-mode-draw" title="画线模式：点击端子/画布新增自定义连线">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3z"/><path d="m13.5 6.5 4 4"/></svg>
+          ✏️ 画线
+        </button>
         <div class="tool-divider"></div>
         <button class="tool-btn" id="btn-undo" title="撤销 (Ctrl+Z)" disabled>↶ 撤销</button>
         <button class="tool-btn" id="btn-redo" title="重做 (Ctrl+Y)" disabled>↷ 重做</button>
@@ -978,19 +1278,91 @@
     <!-- ==================== 主工作区 ==================== -->
     <div class="workspace">
       <div class="canvas-viewport" id="canvas-viewport">
-        <!-- 连线高亮检视浮窗 -->
+        <!-- 画线模式浮动条 -->
+        <div class="draw-toolbar-bar" id="draw-toolbar-bar">
+          <strong style="color:#38bdf8;">✏️ 画线模式</strong>
+          <div class="seg-group cols-2" id="draw-route-seg">
+            <button type="button" class="seg-btn active" data-draw-route="orthogonal">直角折线</button>
+            <button type="button" class="seg-btn" data-draw-route="straight">直线</button>
+          </div>
+          <div class="color-swatch-bar" id="draw-color-swatches"></div>
+          <input type="color" id="draw-color-picker" value="#0284c7" title="自定义画线颜色" style="width:24px;height:24px;border:1px solid #475569;border-radius:5px;background:#1e293b;cursor:pointer;" />
+          <span class="draw-tip-text" id="draw-status-tip">点击端子或画布起点</span>
+          <button type="button" class="mini-btn" id="btn-draw-finish" style="display:none;background:#0284c7;color:#fff;border-color:#38bdf8;">完成画线</button>
+          <button type="button" class="mini-btn" id="btn-draw-exit" style="background:#334155;color:#f8fafc;border-color:#475569;">退出画线</button>
+        </div>
+
+        <!-- 连线属性编辑浮窗 -->
         <div class="wire-inspector" id="wire-inspector">
           <div class="wire-inspector-head">
             <div class="wire-inspector-title">
               <span class="wire-dot" id="inspector-dot"></span>
               <span id="inspector-name">连线名称</span>
+              <span class="wire-kind-badge" id="inspector-badge">预设线</span>
             </div>
-            <button class="mini-btn" id="btn-close-inspector">✕</button>
+            <button class="mini-btn" id="btn-close-inspector" title="关闭并取消选中">✕</button>
           </div>
           <div class="wire-inspector-desc" id="inspector-desc">信号说明</div>
+
+          <div class="wire-prop-row">
+            <div class="wire-prop-label">
+              <span>独立颜色</span>
+              <span class="wire-prop-val" id="wire-color-hex">#dc2626</span>
+            </div>
+            <div class="color-swatch-bar" id="wire-color-swatches">
+              <input type="color" id="wire-color-picker" value="#dc2626" title="自定义拾色器" style="width:24px;height:24px;border:1px solid #cbd5e1;border-radius:6px;padding:1px;cursor:pointer;" />
+            </div>
+          </div>
+
+          <div class="wire-prop-row">
+            <div class="wire-prop-label">
+              <span>线宽</span>
+              <span class="wire-prop-val" id="wire-width-val">2.4px</span>
+            </div>
+            <input type="range" class="wire-range" id="wire-width-range" min="1.5" max="5" step="0.1" value="2.4" />
+          </div>
+
+          <div class="wire-prop-row">
+            <div class="wire-prop-label"><span>线型</span></div>
+            <div class="seg-group" id="wire-linestyle-seg">
+              <button type="button" class="seg-btn active" data-val="solid">实线</button>
+              <button type="button" class="seg-btn" data-val="dashed">虚线</button>
+              <button type="button" class="seg-btn" data-val="dotted">点划线</button>
+            </div>
+          </div>
+
+          <div class="wire-prop-row">
+            <div class="wire-prop-label"><span>走线模式</span></div>
+            <div class="seg-group cols-2" id="wire-routemode-seg">
+              <button type="button" class="seg-btn active" data-val="orthogonal">直角折线</button>
+              <button type="button" class="seg-btn" data-val="straight">直线</button>
+            </div>
+          </div>
+
+          <div class="wire-prop-row">
+            <div class="wire-prop-label"><span>端点样式</span></div>
+            <div class="seg-group" id="wire-endstyle-seg">
+              <button type="button" class="seg-btn active" data-val="none">无端点</button>
+              <button type="button" class="seg-btn" data-val="dot">接线圆点</button>
+              <button type="button" class="seg-btn" data-val="arrow">箭头</button>
+            </div>
+          </div>
+
+          <div class="wire-prop-row">
+            <div class="wire-prop-label">
+              <span>线上标签文字（可拖拽位置）</span>
+            </div>
+            <div class="wire-label-edit-row">
+              <input type="text" class="form-control" id="wire-label-input" placeholder="输入标签文字，留空隐藏" />
+              <button type="button" class="mini-btn" id="btn-wire-label-clear" title="清空文字">清空</button>
+              <button type="button" class="mini-btn" id="btn-wire-label-center" title="标签居中复位">居中</button>
+            </div>
+          </div>
+
           <div class="wire-inspector-actions">
-            <button class="mini-btn" id="btn-inspector-toggle">隐藏此线组</button>
-            <button class="mini-btn" id="btn-inspector-clear">取消高亮</button>
+            <button type="button" class="mini-btn" id="btn-wire-reset-route" title="还原默认走线路径和标签位置">重置走线</button>
+            <button type="button" class="mini-btn" id="btn-wire-reset-style" title="恢复此线默认样式">恢复样式</button>
+            <button type="button" class="mini-btn danger" id="btn-wire-delete">隐藏此线</button>
           </div>
         </div>
 
@@ -1615,7 +1987,7 @@
           <span>·</span>
           <span><strong>拖拽</strong>设备卡片调整位置</span>
           <span>·</span>
-          <span><strong>点击</strong>连线高亮查看</span>
+          <span><strong>点击</strong>连线编辑样式与拖动手柄 · <strong>✏️画线</strong>新增连线</span>
           <span>·</span>
           <span>滚轮缩放 / <kbd>Space</kbd>+拖拽平移</span>
         </div>
@@ -1699,6 +2071,15 @@
           <div class="tab-panel" id="tab-layers">
             <div class="panel-section">
               <div class="panel-section-title">
+                <span>自定义与单线管理</span>
+                <button class="mini-btn" id="btn-restore-all-wires">还原隐藏线</button>
+              </div>
+              <div id="custom-wires-list" style="margin-bottom:8px;"></div>
+              <div id="hidden-wires-list"></div>
+            </div>
+
+            <div class="panel-section">
+              <div class="panel-section-title">
                 <span>信号连线与模块显隐</span>
                 <button class="mini-btn" id="btn-show-all-layers">全部显示</button>
               </div>
@@ -1762,7 +2143,7 @@
   <div class="modal-overlay" id="reset-modal">
     <div class="modal-card">
       <h3>恢复默认标准图纸？</h3>
-      <p>此操作将把所有文本修改、设备位置偏移、连线显隐和线色自定义全部重置为初始《魔点AB门互锁控制器 · 双门互锁接线标准图》状态。</p>
+      <p>此操作将把所有文本修改、设备位置偏移、连线样式与走线调整、新增自定义连线、图层显隐和线色全部重置为初始《魔点AB门互锁控制器 · 双门互锁接线标准图》状态。</p>
       <div class="modal-actions">
         <button class="mini-btn" id="btn-cancel-reset">取消</button>
         <button class="mini-btn" id="btn-confirm-reset" style="background:#dc2626;color:#fff;border-color:#dc2626;">确认恢复默认</button>
@@ -1776,7 +2157,7 @@
 
       const STORAGE_KEY = 'modian_ab_interlock_editor_v2';
 
-      // ==================== 1. 默认状态定义 ====================
+      // ==================== 1. 默认状态与元数据定义 ====================
       const DEFAULT_COLORS = {
         powerRed: '#dc2626',
         gndBlack: '#1e293b',
@@ -1787,6 +2168,12 @@
         fullOpenOrange: '#ea580c',
         resetIndigo: '#4f46e5'
       };
+
+      const SWATCH_COLORS = [
+        '#dc2626', '#1e293b', '#0284c7', '#16a34a',
+        '#7c3aed', '#0e7490', '#ea580c', '#4f46e5',
+        '#475569', '#d97706'
+      ];
 
       const COLOR_META = [
         { key: 'powerRed', name: '电源/开锁/RS485-A', desc: '+12V/5V供电 · 开锁/按钮信号 · RS485-A' },
@@ -1858,6 +2245,100 @@
         { id: 'sensor-outer', layer: 'doorSensor', name: '外门禁 Sensor/GND → 门磁', colorKey: 'sensorPurple', desc: '外门门禁 Sensor 接外门磁力锁门磁 COM，GND 接门磁 NO。' }
       ];
 
+      // 设备端子吸附注册表（所有坐标均绑定 modId，拖拽设备后自动跟随）
+      const TERMINALS = [
+        // 5V 摄像机电源
+        { id: 'psu-cam-out', modId: 'psu-camera', x: 124, y: 239, label: '5V电源 Type-C 输出' },
+        // 联动摄像机
+        { id: 'cam-485a', modId: 'camera', x: 197, y: 156, label: '摄像机 485A' },
+        { id: 'cam-485b', modId: 'camera', x: 233, y: 156, label: '摄像机 485B' },
+        { id: 'cam-typec', modId: 'camera', x: 152, y: 239, label: '摄像机 Type-C' },
+        { id: 'cam-rj45', modId: 'camera', x: 282, y: 239, label: '摄像机 RJ45网口' },
+        // 网络交换机
+        { id: 'sw-left', modId: 'network-switch', x: 314, y: 205, label: '交换机 网口L' },
+        { id: 'sw-right', modId: 'network-switch', x: 392, y: 205, label: '交换机 网口R' },
+        // 内门门禁
+        { id: 'acc-in-485a', modId: 'access-inner', x: 486, y: 156, label: '内门禁 485A' },
+        { id: 'acc-in-485b', modId: 'access-inner', x: 524, y: 156, label: '内门禁 485B' },
+        { id: 'acc-in-no', modId: 'access-inner', x: 432, y: 328, label: '内门禁 NO' },
+        { id: 'acc-in-com', modId: 'access-inner', x: 466, y: 328, label: '内门禁 COM' },
+        { id: 'acc-in-nc', modId: 'access-inner', x: 500, y: 328, label: '内门禁 NC' },
+        { id: 'acc-in-gnd1', modId: 'access-inner', x: 534, y: 328, label: '内门禁 GND(电源)' },
+        { id: 'acc-in-12v', modId: 'access-inner', x: 568, y: 328, label: '内门禁 12V' },
+        { id: 'acc-in-sensor', modId: 'access-inner', x: 602, y: 328, label: '内门禁 Sensor' },
+        { id: 'acc-in-gnd2', modId: 'access-inner', x: 636, y: 328, label: '内门禁 GND(门磁)' },
+        // 外门门禁
+        { id: 'acc-out-485a', modId: 'access-outer', x: 758, y: 156, label: '外门禁 485A' },
+        { id: 'acc-out-485b', modId: 'access-outer', x: 796, y: 156, label: '外门禁 485B' },
+        { id: 'acc-out-no', modId: 'access-outer', x: 704, y: 328, label: '外门禁 NO' },
+        { id: 'acc-out-com', modId: 'access-outer', x: 738, y: 328, label: '外门禁 COM' },
+        { id: 'acc-out-nc', modId: 'access-outer', x: 772, y: 328, label: '外门禁 NC' },
+        { id: 'acc-out-gnd1', modId: 'access-outer', x: 806, y: 328, label: '外门禁 GND(电源)' },
+        { id: 'acc-out-12v', modId: 'access-outer', x: 840, y: 328, label: '外门禁 12V' },
+        { id: 'acc-out-sensor', modId: 'access-outer', x: 874, y: 328, label: '外门禁 Sensor' },
+        { id: 'acc-out-gnd2', modId: 'access-outer', x: 908, y: 328, label: '外门禁 GND(门磁)' },
+        // 开门按钮 1 & 2
+        { id: 'btn1-no', modId: 'exit-btn-1', x: 990, y: 164, label: '按钮1 NO' },
+        { id: 'btn1-com', modId: 'exit-btn-1', x: 1025, y: 164, label: '按钮1 COM' },
+        { id: 'btn2-no', modId: 'exit-btn-2', x: 1110, y: 164, label: '按钮2 NO' },
+        { id: 'btn2-com', modId: 'exit-btn-2', x: 1145, y: 164, label: '按钮2 COM' },
+        // 室内功能开关箱
+        { id: 'sw-full', modId: 'switch-panel', x: 1260, y: 267, label: '全开开关' },
+        { id: 'sw-full-gnd', modId: 'switch-panel', x: 1528, y: 267, label: '全开开关 GND' },
+        { id: 'sw-rst', modId: 'switch-panel', x: 1260, y: 393, label: '复位开关' },
+        { id: 'sw-rst-gnd', modId: 'switch-panel', x: 1528, y: 393, label: '复位开关 GND' },
+        // 门禁电源适配器
+        { id: 'psu1-12v', modId: 'psu-access-1', x: 204, y: 388, label: '内门禁电源 +12V' },
+        { id: 'psu1-gnd', modId: 'psu-access-1', x: 204, y: 405, label: '内门禁电源 GND' },
+        { id: 'psu2-12v', modId: 'psu-access-2', x: 204, y: 474, label: '外门禁电源 +12V' },
+        { id: 'psu2-gnd', modId: 'psu-access-2', x: 204, y: 492, label: '外门禁电源 GND' },
+        // 主控制器上排
+        { id: 'ctrl-in-btn', modId: 'main-controller', x: 456, y: 574, label: '控制器 内门读卡-按钮' },
+        { id: 'ctrl-in-tm', modId: 'main-controller', x: 480, y: 574, label: '控制器 内门读卡-TM' },
+        { id: 'ctrl-in-gnd', modId: 'main-controller', x: 504, y: 574, label: '控制器 内门读卡-GND' },
+        { id: 'ctrl-in-12v', modId: 'main-controller', x: 528, y: 574, label: '控制器 内门读卡-+12V' },
+        { id: 'ctrl-out-btn', modId: 'main-controller', x: 574, y: 574, label: '控制器 外门读卡-按钮' },
+        { id: 'ctrl-out-tm', modId: 'main-controller', x: 598, y: 574, label: '控制器 外门读卡-TM' },
+        { id: 'ctrl-out-gnd', modId: 'main-controller', x: 622, y: 574, label: '控制器 外门读卡-GND' },
+        { id: 'ctrl-out-12v', modId: 'main-controller', x: 646, y: 574, label: '控制器 外门读卡-+12V' },
+        { id: 'ctrl-kb-out', modId: 'main-controller', x: 692, y: 574, label: '控制器 键盘-外开' },
+        { id: 'ctrl-kb-in', modId: 'main-controller', x: 716, y: 574, label: '控制器 键盘-内开' },
+        { id: 'ctrl-kb-full', modId: 'main-controller', x: 740, y: 574, label: '控制器 键盘-全开' },
+        { id: 'ctrl-kb-lock', modId: 'main-controller', x: 764, y: 574, label: '控制器 键盘-全锁' },
+        { id: 'ctrl-kb-rst', modId: 'main-controller', x: 788, y: 574, label: '控制器 键盘-复位' },
+        { id: 'ctrl-kb-gnd', modId: 'main-controller', x: 812, y: 574, label: '控制器 键盘-GND' },
+        // 主控制器下排
+        { id: 'ctrl-li-gnd1', modId: 'main-controller', x: 456, y: 824, label: '控制器 内门锁-GND' },
+        { id: 'ctrl-li-m', modId: 'main-controller', x: 480, y: 824, label: '控制器 内门锁-门磁M+' },
+        { id: 'ctrl-li-s', modId: 'main-controller', x: 504, y: 824, label: '控制器 内门锁-闭锁S+' },
+        { id: 'ctrl-li-gnd2', modId: 'main-controller', x: 528, y: 824, label: '控制器 内门锁-GND' },
+        { id: 'ctrl-li-l', modId: 'main-controller', x: 552, y: 824, label: '控制器 内门锁-开锁L+' },
+        { id: 'ctrl-lo-gnd1', modId: 'main-controller', x: 600, y: 824, label: '控制器 外门锁-GND' },
+        { id: 'ctrl-lo-m', modId: 'main-controller', x: 624, y: 824, label: '控制器 外门锁-门磁M+' },
+        { id: 'ctrl-lo-s', modId: 'main-controller', x: 648, y: 824, label: '控制器 外门锁-闭锁S+' },
+        { id: 'ctrl-lo-gnd2', modId: 'main-controller', x: 672, y: 824, label: '控制器 外门锁-GND' },
+        { id: 'ctrl-lo-l', modId: 'main-controller', x: 696, y: 824, label: '控制器 外门锁-开锁L+' },
+        { id: 'ctrl-lt-p', modId: 'main-controller', x: 744, y: 824, label: '控制器 照明+' },
+        { id: 'ctrl-lt-n', modId: 'main-controller', x: 768, y: 824, label: '控制器 照明-' },
+        { id: 'ctrl-pw-n', modId: 'main-controller', x: 792, y: 824, label: '控制器 电源-' },
+        { id: 'ctrl-pw-p', modId: 'main-controller', x: 816, y: 824, label: '控制器 电源+' },
+        { id: 'ctrl-dc12', modId: 'main-controller', x: 860, y: 812, label: '控制器 +12V DC圆孔' },
+        // 内门磁力锁
+        { id: 'lock-in-no', modId: 'maglock-inner', x: 438, y: 958, label: '内门磁力锁 NO' },
+        { id: 'lock-in-com', modId: 'maglock-inner', x: 476, y: 958, label: '内门磁力锁 COM' },
+        { id: 'lock-in-nc', modId: 'maglock-inner', x: 514, y: 958, label: '内门磁力锁 NC' },
+        { id: 'lock-in-12n', modId: 'maglock-inner', x: 552, y: 958, label: '内门磁力锁 12V-' },
+        { id: 'lock-in-12p', modId: 'maglock-inner', x: 590, y: 958, label: '内门磁力锁 12V+' },
+        // 外门磁力锁
+        { id: 'lock-out-no', modId: 'maglock-outer', x: 738, y: 958, label: '外门磁力锁 NO' },
+        { id: 'lock-out-com', modId: 'maglock-outer', x: 776, y: 958, label: '外门磁力锁 COM' },
+        { id: 'lock-out-nc', modId: 'maglock-outer', x: 814, y: 958, label: '外门磁力锁 NC' },
+        { id: 'lock-out-12n', modId: 'maglock-outer', x: 852, y: 958, label: '外门磁力锁 12V-' },
+        { id: 'lock-out-12p', modId: 'maglock-outer', x: 890, y: 958, label: '外门磁力锁 12V+' },
+        // 主机电源
+        { id: 'psu-ctrl-out', modId: 'psu-controller', x: 1246, y: 896, label: '主机 12V 电源输出' }
+      ];
+
       // 捕获初始 SVG 上所有可编辑文本作为默认字典
       const svgEl = document.getElementById('wiring-diagram');
       const DEFAULT_TEXTS = {
@@ -1880,8 +2361,8 @@
         wireSensorOutNo: '外门禁 GND → 门磁 NO'
       };
 
-      svgEl.querySelectorAll('[data-edit-key]').forEach(el => {
-        DEFAULT_TEXTS[el.getAttribute('data-edit-key')] = el.textContent;
+      svgEl.querySelectorAll('[data-edit-key]').forEach(node => {
+        DEFAULT_TEXTS[node.getAttribute('data-edit-key')] = node.textContent;
       });
 
       const DEFAULT_OFFSETS = {};
@@ -1892,7 +2373,9 @@
           texts: { ...DEFAULT_TEXTS },
           offsets: JSON.parse(JSON.stringify(DEFAULT_OFFSETS)),
           layers: { ...DEFAULT_LAYERS },
-          colors: { ...DEFAULT_COLORS }
+          colors: { ...DEFAULT_COLORS },
+          wireEdits: {},
+          customWires: []
         };
       }
 
@@ -1902,8 +2385,21 @@
       let redoStack = [];
       let isDirty = false;
       let editMode = true;
+      let drawMode = false;
       let snapToGrid = true;
-      let highlightedWireId = null;
+
+      let selectedWireId = null;     // 单条连线选中态
+      let highlightedGroupId = null; // 侧边栏线组高亮态
+
+      // 画线模式配置与会话
+      const drawConfig = {
+        routeMode: 'orthogonal',
+        color: '#0284c7',
+        strokeWidth: 2.4,
+        lineStyle: 'solid',
+        endStyle: 'dot'
+      };
+      let drawSession = null; // { points: [{modId?, x, y, termLabel?}], cursorPt: {x,y}, snapTerm: null }
 
       // 视图缩放与平移状态
       let zoom = 1;
@@ -1925,6 +2421,9 @@
         if (!undoStack.length) return;
         redoStack.push(cloneState(state));
         state = undoStack.pop();
+        if (selectedWireId && !getWireDescriptor(selectedWireId)) {
+          selectedWireId = null;
+        }
         markDirty(true);
         applyStateToDOM();
         updateHistoryButtons();
@@ -1935,6 +2434,9 @@
         if (!redoStack.length) return;
         undoStack.push(cloneState(state));
         state = redoStack.pop();
+        if (selectedWireId && !getWireDescriptor(selectedWireId)) {
+          selectedWireId = null;
+        }
         markDirty(true);
         applyStateToDOM();
         updateHistoryButtons();
@@ -1958,12 +2460,12 @@
         }
       }
 
-      // ==================== 3. 动态正交连线与状态渲染引擎 ====================
+      // ==================== 3. 几何辅助与连线数据模型 ====================
       const NS = 'http://www.w3.org/2000/svg';
       function el(tag, attrs = {}, parent = null) {
         const node = document.createElementNS(NS, tag);
         for (const [k, v] of Object.entries(attrs)) {
-          node.setAttribute(k, v);
+          if (v !== undefined && v !== null) node.setAttribute(k, v);
         }
         if (parent) parent.appendChild(node);
         return node;
@@ -1974,10 +2476,840 @@
         return { x: x + o.dx, y: y + o.dy };
       }
 
-      function isZero(modId) {
-        const o = state.offsets[modId] || { dx: 0, dy: 0 };
-        return o.dx === 0 && o.dy === 0;
+      function resolveAnchor(anchor) {
+        if (anchor && anchor.modId) {
+          return pt(anchor.modId, anchor.x, anchor.y);
+        }
+        return { x: anchor.x, y: anchor.y };
       }
+
+      function findNearestTerminal(svgX, svgY, threshold = 18) {
+        let best = null;
+        let bestDist = threshold;
+        for (const t of TERMINALS) {
+          const modNode = document.getElementById('mod-' + t.modId);
+          if (modNode && modNode.style.display === 'none') continue;
+          const p = pt(t.modId, t.x, t.y);
+          const d = Math.hypot(p.x - svgX, p.y - svgY);
+          if (d <= bestDist) {
+            bestDist = d;
+            best = { ...t, px: p.x, py: p.y };
+          }
+        }
+        return best;
+      }
+
+      function ptsToPathD(points) {
+        if (!points || points.length === 0) return '';
+        let d = `M ${Number(points[0].x.toFixed(2))} ${Number(points[0].y.toFixed(2))}`;
+        for (let i = 1; i < points.length; i++) {
+          d += ` L ${Number(points[i].x.toFixed(2))} ${Number(points[i].y.toFixed(2))}`;
+        }
+        return d;
+      }
+
+      // 将一组有序锚点转化为正交折线点集
+      function routeOrthogonalThrough(anchors, segOffsets = {}) {
+        if (anchors.length < 2) return anchors.slice();
+        if (anchors.length === 2) {
+          const [a, b] = anchors;
+          const dx = b.x - a.x;
+          const dy = b.y - a.y;
+          const off = segOffsets.s1 || 0;
+          if (Math.abs(dx) >= Math.abs(dy)) {
+            const midX = (a.x + b.x) / 2 + off;
+            return [a, { x: midX, y: a.y }, { x: midX, y: b.y }, b];
+          } else {
+            const midY = (a.y + b.y) / 2 + off;
+            return [a, { x: a.x, y: midY }, { x: b.x, y: midY }, b];
+          }
+        }
+        const out = [anchors[0]];
+        let preferHoriz = Math.abs(anchors[1].x - anchors[0].x) >= Math.abs(anchors[1].y - anchors[0].y);
+        for (let i = 0; i < anchors.length - 1; i++) {
+          const a = out[out.length - 1];
+          const b = anchors[i + 1];
+          if (Math.abs(a.x - b.x) > 0.5 && Math.abs(a.y - b.y) > 0.5) {
+            if (preferHoriz) {
+              out.push({ x: b.x, y: a.y });
+              preferHoriz = false;
+            } else {
+              out.push({ x: a.x, y: b.y });
+              preferHoriz = true;
+            }
+          }
+          out.push(b);
+        }
+        return out;
+      }
+
+      function dashArrayForStyle(style) {
+        if (style === 'dashed') return '7 4';
+        if (style === 'dotted') return '10 4 2 4';
+        return null;
+      }
+
+      // 生成全部 25 条可独立编辑的预设连线定义
+      function getPresetWires() {
+        const c = state.colors;
+        return [
+          {
+            id: 'rs485-a', groupId: 'rs485', layer: 'rs485', front: false,
+            name: 'RS485-A 总线', desc: '联动摄像机 485-A 并联至内外门禁 485-A。',
+            defaultColor: c.powerRed, defaultWidth: 2.4, defaultLineStyle: 'solid', defaultEndStyle: 'none',
+            labelKey: 'wireRs485A', labelBorder: '#fca5a5', labelFontSize: '11.5', labelW: 106, labelH: 20,
+            build(edit) {
+              const camA = pt('camera', 197, 160);
+              const inA = pt('access-inner', 486, 160);
+              const outA = pt('access-outer', 758, 160);
+              const so = edit.segOffsets || {};
+              const busY = Math.min(camA.y, inA.y, outA.y) - 42 + (so.busY || 0);
+              const minX = Math.min(camA.x, inA.x, outA.x);
+              const maxX = Math.max(camA.x, inA.x, outA.x);
+              const lblAnchor = { x: (camA.x + inA.x) / 2 + 13.5, y: busY - 2 };
+              if (edit.routeMode === 'straight') {
+                const hub = { x: inA.x, y: busY };
+                return {
+                  subPaths: [[camA, hub], [inA, hub], [outA, hub]],
+                  junctions: [hub],
+                  endpoints: [camA, outA],
+                  handles: [{ type: 'seg', segKey: 'busY', axis: 'y', x: (camA.x + outA.x) / 2, y: busY }],
+                  labelAnchor: lblAnchor
+                };
+              }
+              return {
+                subPaths: [
+                  [{ x: minX, y: busY }, { x: maxX, y: busY }],
+                  [camA, { x: camA.x, y: busY }],
+                  [inA, { x: inA.x, y: busY }],
+                  [outA, { x: outA.x, y: busY }]
+                ],
+                junctions: [{ x: inA.x, y: busY }],
+                endpoints: [camA, outA],
+                handles: [{ type: 'seg', segKey: 'busY', axis: 'y', x: (minX + maxX) / 2, y: busY }],
+                labelAnchor: lblAnchor
+              };
+            }
+          },
+          {
+            id: 'rs485-b', groupId: 'rs485', layer: 'rs485', front: false,
+            name: 'RS485-B 总线', desc: '联动摄像机 485-B 并联至内外门禁 485-B。',
+            defaultColor: c.gndBlack, defaultWidth: 2.4, defaultLineStyle: 'solid', defaultEndStyle: 'none',
+            labelKey: 'wireRs485B', labelBorder: '#cbd5e1', labelFontSize: '11.5', labelW: 106, labelH: 20,
+            build(edit) {
+              const camB = pt('camera', 233, 160);
+              const inB = pt('access-inner', 524, 160);
+              const outB = pt('access-outer', 796, 160);
+              const so = edit.segOffsets || {};
+              const busY = Math.min(camB.y, inB.y, outB.y) - 24 + (so.busY || 0);
+              const minX = Math.min(camB.x, inB.x, outB.x);
+              const maxX = Math.max(camB.x, inB.x, outB.x);
+              const lblAnchor = { x: (camB.x + inB.x) / 2 - 22.5, y: busY };
+              if (edit.routeMode === 'straight') {
+                const hub = { x: inB.x, y: busY };
+                return {
+                  subPaths: [[camB, hub], [inB, hub], [outB, hub]],
+                  junctions: [hub],
+                  endpoints: [camB, outB],
+                  handles: [{ type: 'seg', segKey: 'busY', axis: 'y', x: (camB.x + outB.x) / 2, y: busY }],
+                  labelAnchor: lblAnchor
+                };
+              }
+              return {
+                subPaths: [
+                  [{ x: minX, y: busY }, { x: maxX, y: busY }],
+                  [camB, { x: camB.x, y: busY }],
+                  [inB, { x: inB.x, y: busY }],
+                  [outB, { x: outB.x, y: busY }]
+                ],
+                junctions: [{ x: inB.x, y: busY }],
+                endpoints: [camB, outB],
+                handles: [{ type: 'seg', segKey: 'busY', axis: 'y', x: (minX + maxX) / 2, y: busY }],
+                labelAnchor: lblAnchor
+              };
+            }
+          },
+          {
+            id: 'cam-pwr', groupId: 'cam-pwr', layer: 'cameraNet', front: false,
+            name: '摄像机 5V Type-C 供电', desc: '5V 1A 电源适配器输出至联动摄像机 Type-C 供电口。',
+            defaultColor: c.powerRed, defaultWidth: 2.6, defaultLineStyle: 'solid', defaultEndStyle: 'none',
+            labelKey: null, labelBorder: '#fca5a5', labelFontSize: '9.5', labelW: 68, labelH: 18,
+            build(edit) {
+              const p1 = pt('psu-camera', 124, 239);
+              const p2 = pt('camera', 152, 239);
+              return buildTwoPtWire(p1, p2, edit, (so) => {
+                const midX = (p1.x + p2.x) / 2 + (so.midX || 0);
+                return {
+                  pts: [p1, { x: midX, y: p1.y }, { x: midX, y: p2.y }, p2],
+                  handles: [{ type: 'seg', segKey: 'midX', axis: 'x', x: midX, y: (p1.y + p2.y) / 2 }],
+                  labelAnchor: { x: midX, y: (p1.y + p2.y) / 2 - 14 }
+                };
+              });
+            }
+          },
+          {
+            id: 'cam-net', groupId: 'cam-net', layer: 'cameraNet', front: false,
+            name: '摄像机网线直连', desc: '联动摄像机 RJ45 网口通过网线直连网络交换机。',
+            defaultColor: c.noBlue, defaultWidth: 2.2, defaultLineStyle: 'dashed', defaultEndStyle: 'none',
+            labelKey: 'wireNetDirect', labelBorder: 'none', labelFontSize: '9', labelW: 42, labelH: 15,
+            build(edit) {
+              const p1 = pt('camera', 282, 239);
+              const p2 = pt('network-switch', 314, 205);
+              return buildTwoPtWire(p1, p2, edit, (so) => {
+                const midX = (p1.x + p2.x) / 2 + (so.midX || 0);
+                return {
+                  pts: [p1, { x: midX, y: p1.y }, { x: midX, y: p2.y }, p2],
+                  handles: [{ type: 'seg', segKey: 'midX', axis: 'x', x: midX, y: (p1.y + p2.y) / 2 }],
+                  labelAnchor: { x: midX - 5, y: p2.y - 10 }
+                };
+              });
+            }
+          },
+          {
+            id: 'acc1-pwr-12v', groupId: 'access1-pwr', layer: 'powerSupply', front: false,
+            name: '内门禁 +12V 供电', desc: '12V2A 电源适配器正极接内门门禁 12V 端子。',
+            defaultColor: c.powerRed, defaultWidth: 2.2, defaultLineStyle: 'solid', defaultEndStyle: 'none',
+            labelKey: 'wireAcc1Pwr', labelBorder: 'none', labelFontSize: '10.5', labelW: 72, labelH: 17,
+            build(edit) {
+              const s1 = pt('psu-access-1', 204, 388);
+              const d1 = pt('access-inner', 568, 328);
+              return buildTwoPtWire(s1, d1, edit, (so) => {
+                const midX = 315 + (state.offsets['psu-access-1'].dx + state.offsets['access-inner'].dx) * 0.35 + (so.midX || 0);
+                const midY = 376 + state.offsets['access-inner'].dy * 0.5 + (so.midY || 0);
+                return {
+                  pts: [s1, { x: midX, y: s1.y }, { x: midX, y: midY }, { x: d1.x, y: midY }, d1],
+                  handles: [
+                    { type: 'seg', segKey: 'midX', axis: 'x', x: midX, y: (s1.y + midY) / 2 },
+                    { type: 'seg', segKey: 'midY', axis: 'y', x: (midX + d1.x) / 2, y: midY }
+                  ],
+                  labelAnchor: { x: (s1.x + midX) / 2 - 3, y: s1.y - 10 }
+                };
+              });
+            }
+          },
+          {
+            id: 'acc1-pwr-gnd', groupId: 'access1-pwr', layer: 'powerSupply', front: false,
+            name: '内门禁 GND 供电', desc: '12V2A 电源适配器负极接内门门禁 GND 端子。',
+            defaultColor: '#475569', defaultWidth: 2.2, defaultLineStyle: 'solid', defaultEndStyle: 'none',
+            labelKey: null, labelBorder: '#cbd5e1', labelFontSize: '10', labelW: 76, labelH: 18,
+            build(edit) {
+              const s2 = pt('psu-access-1', 204, 405);
+              const d2 = pt('access-inner', 534, 328);
+              return buildTwoPtWire(s2, d2, edit, (so) => {
+                const midX = 328 + (state.offsets['psu-access-1'].dx + state.offsets['access-inner'].dx) * 0.35 + (so.midX || 0);
+                const midY = 392 + state.offsets['access-inner'].dy * 0.5 + (so.midY || 0);
+                return {
+                  pts: [s2, { x: midX, y: s2.y }, { x: midX, y: midY }, { x: d2.x, y: midY }, d2],
+                  handles: [
+                    { type: 'seg', segKey: 'midX', axis: 'x', x: midX, y: (s2.y + midY) / 2 },
+                    { type: 'seg', segKey: 'midY', axis: 'y', x: (midX + d2.x) / 2, y: midY }
+                  ],
+                  labelAnchor: { x: (midX + d2.x) / 2, y: midY }
+                };
+              });
+            }
+          },
+          {
+            id: 'acc2-pwr-12v', groupId: 'access2-pwr', layer: 'powerSupply', front: false,
+            name: '外门禁 +12V 供电', desc: '12V2A 电源适配器正极接外门门禁 12V 端子。',
+            defaultColor: c.powerRed, defaultWidth: 2.2, defaultLineStyle: 'solid', defaultEndStyle: 'none',
+            labelKey: 'wireAcc2Pwr', labelBorder: 'none', labelFontSize: '10.5', labelW: 72, labelH: 17,
+            build(edit) {
+              const s1 = pt('psu-access-2', 204, 474);
+              const d1 = pt('access-outer', 840, 328);
+              return buildTwoPtWire(s1, d1, edit, (so) => {
+                const midX = 290 + state.offsets['psu-access-2'].dx * 0.4 + (so.midX || 0);
+                const midY = 520 + (state.offsets['psu-access-2'].dy + state.offsets['main-controller'].dy) * 0.3 + (so.midY || 0);
+                return {
+                  pts: [s1, { x: midX, y: s1.y }, { x: midX, y: midY }, { x: d1.x, y: midY }, d1],
+                  handles: [
+                    { type: 'seg', segKey: 'midX', axis: 'x', x: midX, y: (s1.y + midY) / 2 },
+                    { type: 'seg', segKey: 'midY', axis: 'y', x: (midX + d1.x) / 2, y: midY }
+                  ],
+                  labelAnchor: { x: (s1.x + midX) / 2 + 1, y: s1.y - 10 }
+                };
+              });
+            }
+          },
+          {
+            id: 'acc2-pwr-gnd', groupId: 'access2-pwr', layer: 'powerSupply', front: false,
+            name: '外门禁 GND 供电', desc: '12V2A 电源适配器负极接外门门禁 GND 端子。',
+            defaultColor: '#475569', defaultWidth: 2.2, defaultLineStyle: 'solid', defaultEndStyle: 'none',
+            labelKey: null, labelBorder: '#cbd5e1', labelFontSize: '10', labelW: 76, labelH: 18,
+            build(edit) {
+              const s2 = pt('psu-access-2', 204, 492);
+              const d2 = pt('access-outer', 806, 328);
+              return buildTwoPtWire(s2, d2, edit, (so) => {
+                const midX = 274 + state.offsets['psu-access-2'].dx * 0.4 + (so.midX || 0);
+                const midY = 532 + (state.offsets['psu-access-2'].dy + state.offsets['main-controller'].dy) * 0.3 + (so.midY || 0);
+                return {
+                  pts: [s2, { x: midX, y: s2.y }, { x: midX, y: midY }, { x: d2.x, y: midY }, d2],
+                  handles: [
+                    { type: 'seg', segKey: 'midX', axis: 'x', x: midX, y: (s2.y + midY) / 2 },
+                    { type: 'seg', segKey: 'midY', axis: 'y', x: (midX + d2.x) / 2, y: midY }
+                  ],
+                  labelAnchor: { x: (midX + d2.x) / 2, y: midY }
+                };
+              });
+            }
+          },
+          {
+            id: 'acc-no-inner', groupId: 'access-no-com', layer: 'doorSignal', front: false,
+            name: '门禁 NO 并联 → 内门按钮', desc: '内外门禁 NO 端子并联接入控制器【内门读卡-按钮】。',
+            defaultColor: c.powerRed, defaultWidth: 2.4, defaultLineStyle: 'solid', defaultEndStyle: 'none',
+            labelKey: 'wireAccNoInner', labelBorder: '#fca5a5', labelFontSize: '10.5', labelW: 136, labelH: 21,
+            build(edit) {
+              const inNo = pt('access-inner', 432, 328);
+              const outNo = pt('access-outer', 704, 328);
+              const ctrlInBtn = pt('main-controller', 456, 574);
+              const so = edit.segOffsets || {};
+              const busY = 414 + (state.offsets['access-inner'].dy + state.offsets['main-controller'].dy) * 0.4 + (so.busY || 0);
+              const lblAnchor = { x: (inNo.x + outNo.x) / 2 + 4, y: busY - 1 };
+              if (edit.routeMode === 'straight') {
+                const hub = { x: ctrlInBtn.x, y: busY };
+                return {
+                  subPaths: [[inNo, hub], [outNo, hub], [hub, ctrlInBtn]],
+                  junctions: [hub],
+                  endpoints: [inNo, ctrlInBtn],
+                  handles: [{ type: 'seg', segKey: 'busY', axis: 'y', x: (inNo.x + outNo.x) / 2, y: busY }],
+                  labelAnchor: lblAnchor
+                };
+              }
+              return {
+                subPaths: [
+                  [inNo, { x: inNo.x, y: busY }, { x: outNo.x, y: busY }, outNo],
+                  [{ x: ctrlInBtn.x, y: busY }, ctrlInBtn]
+                ],
+                junctions: [{ x: ctrlInBtn.x, y: busY }],
+                endpoints: [inNo, ctrlInBtn],
+                handles: [{ type: 'seg', segKey: 'busY', axis: 'y', x: (inNo.x + outNo.x) / 2, y: busY }],
+                labelAnchor: lblAnchor
+              };
+            }
+          },
+          {
+            id: 'acc-com-inner', groupId: 'access-no-com', layer: 'doorSignal', front: false,
+            name: '门禁 COM 并联 → 内门 GND', desc: '内外门禁 COM 端子并联接入控制器【内门读卡-GND】。',
+            defaultColor: c.gndBlack, defaultWidth: 2.4, defaultLineStyle: 'solid', defaultEndStyle: 'none',
+            labelKey: 'wireAccComInner', labelBorder: '#94a3b8', labelFontSize: '10.5', labelW: 144, labelH: 21,
+            build(edit) {
+              const inCom = pt('access-inner', 466, 328);
+              const outCom = pt('access-outer', 738, 328);
+              const ctrlInGnd = pt('main-controller', 504, 574);
+              const so = edit.segOffsets || {};
+              const busY = 444 + (state.offsets['access-inner'].dy + state.offsets['main-controller'].dy) * 0.4 + (so.busY || 0);
+              const lblAnchor = { x: (inCom.x + outCom.x) / 2 + 16, y: busY - 1 };
+              if (edit.routeMode === 'straight') {
+                const hub = { x: ctrlInGnd.x, y: busY };
+                return {
+                  subPaths: [[inCom, hub], [outCom, hub], [hub, ctrlInGnd]],
+                  junctions: [hub],
+                  endpoints: [inCom, ctrlInGnd],
+                  handles: [{ type: 'seg', segKey: 'busY', axis: 'y', x: (inCom.x + outCom.x) / 2, y: busY }],
+                  labelAnchor: lblAnchor
+                };
+              }
+              return {
+                subPaths: [
+                  [inCom, { x: inCom.x, y: busY }, { x: outCom.x, y: busY }, outCom],
+                  [{ x: ctrlInGnd.x, y: busY }, ctrlInGnd]
+                ],
+                junctions: [{ x: ctrlInGnd.x, y: busY }],
+                endpoints: [inCom, ctrlInGnd],
+                handles: [{ type: 'seg', segKey: 'busY', axis: 'y', x: (inCom.x + outCom.x) / 2, y: busY }],
+                labelAnchor: lblAnchor
+              };
+            }
+          },
+          {
+            id: 'btn-no-outer', groupId: 'btn-no-com', layer: 'doorSignal', front: false,
+            name: '出门按钮 NO 并联 → 外门 GND', desc: '按钮 1/2 NO 并联接入控制器【外门读卡-GND】。',
+            defaultColor: c.gndBlack, defaultWidth: 2.2, defaultLineStyle: 'solid', defaultEndStyle: 'none',
+            labelKey: 'wireBtnNoOuter', labelBorder: '#94a3b8', labelFontSize: '10.5', labelW: 136, labelH: 21,
+            build(edit) {
+              const b1No = pt('exit-btn-1', 990, 164);
+              const b2No = pt('exit-btn-2', 1110, 164);
+              const ctrlOutGnd = pt('main-controller', 622, 574);
+              const so = edit.segOffsets || {};
+              const topY = Math.min(b1No.y, b2No.y) - 28 + (so.topY || 0);
+              const dropX = Math.min(b1No.x, b2No.x) - 40 + (so.dropX || 0);
+              const corrY = 502 + state.offsets['main-controller'].dy * 0.4 + (so.corrY || 0);
+              const lblAnchor = { x: (ctrlOutGnd.x + dropX) / 2 - 6, y: corrY - 1 };
+              if (edit.routeMode === 'straight') {
+                const hub = { x: b1No.x, y: topY };
+                return {
+                  subPaths: [[b1No, hub], [b2No, hub], [hub, ctrlOutGnd]],
+                  junctions: [hub],
+                  endpoints: [b1No, ctrlOutGnd],
+                  handles: [{ type: 'seg', segKey: 'topY', axis: 'y', x: (b1No.x + b2No.x) / 2, y: topY }],
+                  labelAnchor: lblAnchor
+                };
+              }
+              return {
+                subPaths: [
+                  [b1No, { x: b1No.x, y: topY }, { x: b2No.x, y: topY }, b2No],
+                  [{ x: b1No.x, y: topY }, { x: dropX, y: topY }, { x: dropX, y: corrY }, { x: ctrlOutGnd.x, y: corrY }, ctrlOutGnd]
+                ],
+                junctions: [{ x: b1No.x, y: topY }],
+                endpoints: [b1No, ctrlOutGnd],
+                handles: [
+                  { type: 'seg', segKey: 'topY', axis: 'y', x: (b1No.x + b2No.x) / 2, y: topY },
+                  { type: 'seg', segKey: 'dropX', axis: 'x', x: dropX, y: (topY + corrY) / 2 },
+                  { type: 'seg', segKey: 'corrY', axis: 'y', x: (dropX + ctrlOutGnd.x) / 2, y: corrY }
+                ],
+                labelAnchor: lblAnchor
+              };
+            }
+          },
+          {
+            id: 'btn-com-outer', groupId: 'btn-no-com', layer: 'doorSignal', front: false,
+            name: '出门按钮 COM 并联 → 外门按钮', desc: '按钮 1/2 COM 并联接入控制器【外门读卡-按钮】。',
+            defaultColor: c.powerRed, defaultWidth: 2.2, defaultLineStyle: 'solid', defaultEndStyle: 'none',
+            labelKey: 'wireBtnComOuter', labelBorder: '#fca5a5', labelFontSize: '10.5', labelW: 136, labelH: 21,
+            build(edit) {
+              const b1Com = pt('exit-btn-1', 1025, 164);
+              const b2Com = pt('exit-btn-2', 1145, 164);
+              const ctrlOutBtn = pt('main-controller', 574, 574);
+              const so = edit.segOffsets || {};
+              const topY = Math.min(b1Com.y, b2Com.y) - 14 + (so.topY || 0);
+              const dropX = (b1Com.x + b2Com.x) / 2 - 17 + (so.dropX || 0);
+              const corrY = 474 + state.offsets['main-controller'].dy * 0.4 + (so.corrY || 0);
+              const lblAnchor = { x: (ctrlOutBtn.x + dropX) / 2 - 1, y: corrY - 1 };
+              if (edit.routeMode === 'straight') {
+                const hub = { x: dropX, y: topY };
+                return {
+                  subPaths: [[b1Com, hub], [b2Com, hub], [hub, ctrlOutBtn]],
+                  junctions: [hub],
+                  endpoints: [b1Com, ctrlOutBtn],
+                  handles: [{ type: 'seg', segKey: 'topY', axis: 'y', x: dropX, y: topY }],
+                  labelAnchor: lblAnchor
+                };
+              }
+              return {
+                subPaths: [
+                  [b1Com, { x: b1Com.x, y: topY }, { x: b2Com.x, y: topY }, b2Com],
+                  [{ x: dropX, y: topY }, { x: dropX, y: corrY }, { x: ctrlOutBtn.x, y: corrY }, ctrlOutBtn]
+                ],
+                junctions: [{ x: dropX, y: topY }],
+                endpoints: [b1Com, ctrlOutBtn],
+                handles: [
+                  { type: 'seg', segKey: 'topY', axis: 'y', x: (b1Com.x + b2Com.x) / 2, y: topY },
+                  { type: 'seg', segKey: 'dropX', axis: 'x', x: dropX, y: (topY + corrY) / 2 },
+                  { type: 'seg', segKey: 'corrY', axis: 'y', x: (dropX + ctrlOutBtn.x) / 2, y: corrY }
+                ],
+                labelAnchor: lblAnchor
+              };
+            }
+          },
+          {
+            id: 'sw-fullopen', groupId: 'switches-wire', layer: 'controlSwitches', front: false,
+            name: '全开 → 全开开关 (NO)', desc: '室内操作键盘【全开】接右侧全开开关常开触点。',
+            defaultColor: c.fullOpenOrange, defaultWidth: 2.4, defaultLineStyle: 'solid', defaultEndStyle: 'none',
+            labelKey: 'wireFullOpen', labelBorder: '#fdba74', labelTextColor: '#c2410c', labelFontSize: '10', labelW: 128, labelH: 19,
+            build(edit) {
+              const cFull = pt('main-controller', 740, 574);
+              const sFull = pt('switch-panel', 1260, 267);
+              return buildTwoPtWire(cFull, sFull, edit, (so) => {
+                const corrY = cFull.y - 27 + (so.corrY || 0);
+                const riseX = sFull.x - 54 + (so.riseX || 0);
+                return {
+                  pts: [cFull, { x: cFull.x, y: corrY }, { x: riseX, y: corrY }, { x: riseX, y: sFull.y }, sFull],
+                  handles: [
+                    { type: 'seg', segKey: 'corrY', axis: 'y', x: (cFull.x + riseX) / 2, y: corrY },
+                    { type: 'seg', segKey: 'riseX', axis: 'x', x: riseX, y: (corrY + sFull.y) / 2 }
+                  ],
+                  labelAnchor: { x: cFull.x + 166, y: corrY }
+                };
+              });
+            }
+          },
+          {
+            id: 'sw-reset', groupId: 'switches-wire', layer: 'controlSwitches', front: false,
+            name: '复位 → 复位开关 (NO)', desc: '室内操作键盘【复位】接右侧复位开关常开触点。',
+            defaultColor: c.resetIndigo, defaultWidth: 2.4, defaultLineStyle: 'solid', defaultEndStyle: 'none',
+            labelKey: 'wireReset', labelBorder: '#a5b4fc', labelTextColor: '#4338ca', labelFontSize: '10', labelW: 128, labelH: 19,
+            build(edit) {
+              const cRst = pt('main-controller', 788, 574);
+              const sRst = pt('switch-panel', 1260, 393);
+              return buildTwoPtWire(cRst, sRst, edit, (so) => {
+                const corrY = cRst.y - 17 + (so.corrY || 0);
+                const riseX = sRst.x - 42 + (so.riseX || 0);
+                return {
+                  pts: [cRst, { x: cRst.x, y: corrY }, { x: riseX, y: corrY }, { x: riseX, y: sRst.y }, sRst],
+                  handles: [
+                    { type: 'seg', segKey: 'corrY', axis: 'y', x: (cRst.x + riseX) / 2, y: corrY },
+                    { type: 'seg', segKey: 'riseX', axis: 'x', x: riseX, y: (corrY + sRst.y) / 2 }
+                  ],
+                  labelAnchor: { x: cRst.x + 260, y: corrY }
+                };
+              });
+            }
+          },
+          {
+            id: 'sw-gnd', groupId: 'switches-wire', layer: 'controlSwitches', front: false,
+            name: '全开/复位共用回接 → GND', desc: '全开开关与复位开关 GND 共用回接控制器键盘 GND。',
+            defaultColor: c.gndBlack, defaultWidth: 2.4, defaultLineStyle: 'solid', defaultEndStyle: 'none',
+            labelKey: 'wireSwitchGnd', labelBorder: '#94a3b8', labelFontSize: '10', labelW: 166, labelH: 19,
+            build(edit) {
+              const cGnd = pt('main-controller', 812, 574);
+              const sGnd1 = pt('switch-panel', 1528, 267);
+              const sGnd2 = pt('switch-panel', 1528, 393);
+              const so = edit.segOffsets || {};
+              const corrY = cGnd.y - 7 + (so.corrY || 0);
+              const riseX = sGnd1.x + 26 + (so.riseX || 0);
+              const lblAnchor = { x: Math.min(riseX - 181, cGnd.x + 561), y: corrY };
+              if (edit.routeMode === 'straight') {
+                return {
+                  subPaths: [[cGnd, sGnd2], [sGnd2, sGnd1]],
+                  junctions: [sGnd2],
+                  endpoints: [cGnd, sGnd1],
+                  handles: [{ type: 'seg', segKey: 'corrY', axis: 'y', x: (cGnd.x + sGnd2.x) / 2, y: corrY }],
+                  labelAnchor: lblAnchor
+                };
+              }
+              return {
+                subPaths: [
+                  [cGnd, { x: cGnd.x, y: corrY }, { x: riseX, y: corrY }, { x: riseX, y: sGnd1.y }, sGnd1],
+                  [sGnd2, { x: riseX, y: sGnd2.y }]
+                ],
+                junctions: [{ x: riseX, y: sGnd2.y }],
+                endpoints: [cGnd, sGnd1],
+                handles: [
+                  { type: 'seg', segKey: 'corrY', axis: 'y', x: (cGnd.x + riseX) / 2, y: corrY },
+                  { type: 'seg', segKey: 'riseX', axis: 'x', x: riseX, y: (corrY + sGnd1.y) / 2 }
+                ],
+                labelAnchor: lblAnchor
+              };
+            }
+          },
+          // 内门磁力锁 4 线
+          ...[
+            { id: 'lock-in-1', name: '内门锁 GND → 磁力锁 NO', sx: 456, dx: 438, colorKey: 'noBlue', off: 14 },
+            { id: 'lock-in-2', name: '内门锁 M+ → 磁力锁 COM', sx: 480, dx: 476, colorKey: 'comGreen', off: 22 },
+            { id: 'lock-in-3', name: '内门锁 GND → 磁力锁 12V-', sx: 528, dx: 552, colorKey: 'gndBlack', off: 30 },
+            { id: 'lock-in-4', name: '内门锁 L+ → 磁力锁 12V+', sx: 552, dx: 590, colorKey: 'powerRed', off: 38 }
+          ].map(item => ({
+            id: item.id, groupId: 'lock-inner', layer: 'lockOutput', front: false,
+            name: item.name, desc: '控制器【内门锁】输出端子连接内门磁力锁对应端子。',
+            defaultColorKey: item.colorKey, defaultWidth: 2.4, defaultLineStyle: 'solid', defaultEndStyle: 'none',
+            labelKey: null, labelBorder: '#cbd5e1', labelFontSize: '10', labelW: 96, labelH: 18,
+            build(edit) {
+              const s = pt('main-controller', item.sx, 824);
+              const d = pt('maglock-inner', item.dx, 958);
+              return buildTwoPtWire(s, d, edit, (so) => {
+                const elbowY = s.y + item.off + (so.elbowY || 0);
+                return {
+                  pts: [s, { x: s.x, y: elbowY }, { x: d.x, y: elbowY }, d],
+                  handles: [{ type: 'seg', segKey: 'elbowY', axis: 'y', x: (s.x + d.x) / 2, y: elbowY }],
+                  labelAnchor: { x: (s.x + d.x) / 2, y: elbowY }
+                };
+              });
+            }
+          })),
+          // 外门磁力锁 4 线
+          ...[
+            { id: 'lock-out-1', name: '外门锁 GND → 磁力锁 NO', sx: 600, dx: 738, colorKey: 'noBlue', off: 14 },
+            { id: 'lock-out-2', name: '外门锁 M+ → 磁力锁 COM', sx: 624, dx: 776, colorKey: 'comGreen', off: 22 },
+            { id: 'lock-out-3', name: '外门锁 GND → 磁力锁 12V-', sx: 672, dx: 852, colorKey: 'gndBlack', off: 30 },
+            { id: 'lock-out-4', name: '外门锁 L+ → 磁力锁 12V+', sx: 696, dx: 890, colorKey: 'powerRed', off: 38 }
+          ].map(item => ({
+            id: item.id, groupId: 'lock-outer', layer: 'lockOutput', front: false,
+            name: item.name, desc: '控制器【外门锁】输出端子连接外门磁力锁对应端子。',
+            defaultColorKey: item.colorKey, defaultWidth: 2.4, defaultLineStyle: 'solid', defaultEndStyle: 'none',
+            labelKey: null, labelBorder: '#cbd5e1', labelFontSize: '10', labelW: 96, labelH: 18,
+            build(edit) {
+              const s = pt('main-controller', item.sx, 824);
+              const d = pt('maglock-outer', item.dx, 958);
+              return buildTwoPtWire(s, d, edit, (so) => {
+                const elbowY = s.y + item.off + (so.elbowY || 0);
+                return {
+                  pts: [s, { x: s.x, y: elbowY }, { x: d.x, y: elbowY }, d],
+                  handles: [{ type: 'seg', segKey: 'elbowY', axis: 'y', x: (s.x + d.x) / 2, y: elbowY }],
+                  labelAnchor: { x: (s.x + d.x) / 2, y: elbowY }
+                };
+              });
+            }
+          })),
+          // 主机供电
+          {
+            id: 'ctrl-pwr', groupId: 'ctrl-pwr', layer: 'powerSupply', front: false,
+            name: '主机 +12V 直流供电', desc: '右下主机电源适配器接入控制器 +12V 独立圆孔 DC 电源口。',
+            defaultColor: c.powerRed, defaultWidth: 2.4, defaultLineStyle: 'solid', defaultEndStyle: 'none',
+            labelKey: 'wireCtrlPwr', labelBorder: '#fca5a5', labelFontSize: '10.5', labelW: 120, labelH: 20,
+            build(edit) {
+              const p1 = pt('psu-controller', 1246, 896);
+              const p2 = pt('main-controller', 860, 812);
+              return buildTwoPtWire(p1, p2, edit, (so) => {
+                const midX = 1188 + (state.offsets['psu-controller'].dx + state.offsets['main-controller'].dx) * 0.4 + (so.midX || 0);
+                const midY = p2.y + 24 + (so.midY || 0);
+                return {
+                  pts: [p1, { x: midX, y: p1.y }, { x: midX, y: midY }, { x: p2.x, y: midY }, p2],
+                  handles: [
+                    { type: 'seg', segKey: 'midX', axis: 'x', x: midX, y: (p1.y + midY) / 2 },
+                    { type: 'seg', segKey: 'midY', axis: 'y', x: (p2.x + midX) / 2, y: midY }
+                  ],
+                  labelAnchor: { x: (p2.x + midX) / 2 + 16, y: midY - 1 }
+                };
+              });
+            }
+          },
+          // 内门禁 Sensor / GND (前层)
+          {
+            id: 'sensor-in-com', groupId: 'sensor-inner', layer: 'doorSensor', front: true,
+            name: '内门禁 Sensor → 门磁 COM', desc: '内门门禁 Sensor 接内门磁力锁门磁 COM。',
+            defaultColor: c.sensorPurple, defaultWidth: 2.4, defaultLineStyle: 'solid', defaultEndStyle: 'dot',
+            labelKey: 'wireSensorInCom', labelBorder: '#a78bfa', labelTextColor: '#5b21b6', labelFontSize: '10.5', labelW: 188, labelH: 20,
+            build(edit) {
+              const sSen = pt('access-inner', 602, 328);
+              const lCom = pt('maglock-inner', 476, 958);
+              const botYDefault = lCom.y - 50;
+              return buildTwoPtWire(sSen, { x: lCom.x, y: botYDefault + (edit.segOffsets?.botY || 0) }, edit, (so) => {
+                const corrX = 366 + state.offsets['maglock-inner'].dx * 0.4 + (so.corrX || 0);
+                const topY = sSen.y + 16 + (so.topY || 0);
+                const botY = lCom.y - 50 + (so.botY || 0);
+                const lblX = corrX - 108;
+                return {
+                  pts: [sSen, { x: sSen.x, y: topY }, { x: corrX, y: topY }, { x: corrX, y: botY }, { x: lCom.x, y: botY }],
+                  handles: [
+                    { type: 'seg', segKey: 'topY', axis: 'y', x: (sSen.x + corrX) / 2, y: topY },
+                    { type: 'seg', segKey: 'corrX', axis: 'x', x: corrX, y: (topY + botY) / 2 },
+                    { type: 'seg', segKey: 'botY', axis: 'y', x: (corrX + lCom.x) / 2, y: botY }
+                  ],
+                  labelAnchor: { x: lblX, y: botY - 1, leaderTo: { x: corrX, y: botY } }
+                };
+              });
+            }
+          },
+          {
+            id: 'sensor-in-no', groupId: 'sensor-inner', layer: 'doorSensor', front: true,
+            name: '内门禁 GND → 门磁 NO', desc: '内门门禁 GND 接内门磁力锁门磁 NO。',
+            defaultColor: c.gndCyan, defaultWidth: 2.4, defaultLineStyle: 'solid', defaultEndStyle: 'dot',
+            labelKey: 'wireSensorInNo', labelBorder: '#67e8f9', labelFontSize: '10.5', labelW: 188, labelH: 20,
+            build(edit) {
+              const sGnd = pt('access-inner', 636, 328);
+              const lNo = pt('maglock-inner', 438, 958);
+              const botYDefault = lNo.y - 34;
+              return buildTwoPtWire(sGnd, { x: lNo.x, y: botYDefault + (edit.segOffsets?.botY || 0) }, edit, (so) => {
+                const corrX = 382 + state.offsets['maglock-inner'].dx * 0.4 + (so.corrX || 0);
+                const topY = sGnd.y + 28 + (so.topY || 0);
+                const botY = lNo.y - 34 + (so.botY || 0);
+                const lblX = corrX - 124;
+                return {
+                  pts: [sGnd, { x: sGnd.x, y: topY }, { x: corrX, y: topY }, { x: corrX, y: botY }, { x: lNo.x, y: botY }],
+                  handles: [
+                    { type: 'seg', segKey: 'topY', axis: 'y', x: (sGnd.x + corrX) / 2, y: topY },
+                    { type: 'seg', segKey: 'corrX', axis: 'x', x: corrX, y: (topY + botY) / 2 },
+                    { type: 'seg', segKey: 'botY', axis: 'y', x: (corrX + lNo.x) / 2, y: botY }
+                  ],
+                  labelAnchor: { x: lblX, y: botY, leaderTo: { x: corrX, y: botY } }
+                };
+              });
+            }
+          },
+          // 外门禁 Sensor / GND (前层)
+          {
+            id: 'sensor-out-com', groupId: 'sensor-outer', layer: 'doorSensor', front: true,
+            name: '外门禁 Sensor → 门磁 COM', desc: '外门门禁 Sensor 接外门磁力锁门磁 COM。',
+            defaultColor: c.sensorPurple, defaultWidth: 2.4, defaultLineStyle: 'solid', defaultEndStyle: 'dot',
+            labelKey: 'wireSensorOutCom', labelBorder: '#a78bfa', labelTextColor: '#5b21b6', labelFontSize: '10.5', labelW: 188, labelH: 20,
+            build(edit) {
+              const sSen = pt('access-outer', 874, 328);
+              const lCom = pt('maglock-outer', 776, 958);
+              const botYDefault = lCom.y - 50;
+              return buildTwoPtWire(sSen, { x: lCom.x, y: botYDefault + (edit.segOffsets?.botY || 0) }, edit, (so) => {
+                const corrX = 1146 + state.offsets['maglock-outer'].dx * 0.4 + (so.corrX || 0);
+                const topY = sSen.y + 16 + (so.topY || 0);
+                const botY = lCom.y - 50 + (so.botY || 0);
+                const lblX = corrX - 120;
+                return {
+                  pts: [sSen, { x: sSen.x, y: topY }, { x: corrX, y: topY }, { x: corrX, y: botY }, { x: lCom.x, y: botY }],
+                  handles: [
+                    { type: 'seg', segKey: 'topY', axis: 'y', x: (sSen.x + corrX) / 2, y: topY },
+                    { type: 'seg', segKey: 'corrX', axis: 'x', x: corrX, y: (topY + botY) / 2 },
+                    { type: 'seg', segKey: 'botY', axis: 'y', x: (corrX + lCom.x) / 2, y: botY }
+                  ],
+                  labelAnchor: { x: lblX, y: botY - 1 }
+                };
+              });
+            }
+          },
+          {
+            id: 'sensor-out-no', groupId: 'sensor-outer', layer: 'doorSensor', front: true,
+            name: '外门禁 GND → 门磁 NO', desc: '外门门禁 GND 接外门磁力锁门磁 NO。',
+            defaultColor: c.gndCyan, defaultWidth: 2.4, defaultLineStyle: 'solid', defaultEndStyle: 'dot',
+            labelKey: 'wireSensorOutNo', labelBorder: '#67e8f9', labelFontSize: '10.5', labelW: 188, labelH: 20,
+            build(edit) {
+              const sGnd = pt('access-outer', 908, 328);
+              const lNo = pt('maglock-outer', 738, 958);
+              const botYDefault = lNo.y - 34;
+              return buildTwoPtWire(sGnd, { x: lNo.x, y: botYDefault + (edit.segOffsets?.botY || 0) }, edit, (so) => {
+                const corrX = 1162 + state.offsets['maglock-outer'].dx * 0.4 + (so.corrX || 0);
+                const topY = sGnd.y + 28 + (so.topY || 0);
+                const botY = lNo.y - 34 + (so.botY || 0);
+                const lblX = corrX - 136;
+                return {
+                  pts: [sGnd, { x: sGnd.x, y: topY }, { x: corrX, y: topY }, { x: corrX, y: botY }, { x: lNo.x, y: botY }],
+                  handles: [
+                    { type: 'seg', segKey: 'topY', axis: 'y', x: (sGnd.x + corrX) / 2, y: topY },
+                    { type: 'seg', segKey: 'corrX', axis: 'x', x: corrX, y: (topY + botY) / 2 },
+                    { type: 'seg', segKey: 'botY', axis: 'y', x: (corrX + lNo.x) / 2, y: botY }
+                  ],
+                  labelAnchor: { x: lblX, y: botY }
+                };
+              });
+            }
+          }
+        ];
+      }
+
+      // 构建两端连线通用函数（支持直角折线、直线、自定义控制点）
+      function buildTwoPtWire(startPt, endPt, edit, orthoFn) {
+        const wps = edit.customWaypoints || [];
+        if (edit.routeMode === 'straight') {
+          const pts = [startPt, ...wps, endPt];
+          const handles = [];
+          wps.forEach((wp, idx) => handles.push({ type: 'wp', wpIndex: idx, x: wp.x, y: wp.y }));
+          for (let i = 0; i < pts.length - 1; i++) {
+            handles.push({
+              type: 'add-wp',
+              insertIndex: i,
+              x: (pts[i].x + pts[i + 1].x) / 2,
+              y: (pts[i].y + pts[i + 1].y) / 2
+            });
+          }
+          return {
+            subPaths: [pts],
+            junctions: [],
+            endpoints: [startPt, endPt],
+            handles,
+            labelAnchor: { x: (startPt.x + endPt.x) / 2, y: (startPt.y + endPt.y) / 2 }
+          };
+        }
+        if (wps.length > 0) {
+          const pts = routeOrthogonalThrough([startPt, ...wps, endPt], edit.segOffsets || {});
+          const handles = wps.map((wp, idx) => ({ type: 'wp', wpIndex: idx, x: wp.x, y: wp.y }));
+          return {
+            subPaths: [pts],
+            junctions: [],
+            endpoints: [startPt, endPt],
+            handles,
+            labelAnchor: { x: (startPt.x + endPt.x) / 2, y: (startPt.y + endPt.y) / 2 }
+          };
+        }
+        const res = orthoFn(edit.segOffsets || {});
+        return {
+          subPaths: [res.pts],
+          junctions: [],
+          endpoints: [res.pts[0], res.pts[res.pts.length - 1]],
+          handles: res.handles,
+          labelAnchor: res.labelAnchor
+        };
+      }
+
+      function getWireDescriptor(wireId) {
+        const preset = getPresetWires().find(w => w.id === wireId);
+        if (preset) {
+          const edit = state.wireEdits[wireId] || {};
+          const defColor = preset.defaultColorKey ? state.colors[preset.defaultColorKey] : preset.defaultColor;
+          return {
+            isCustom: false,
+            id: wireId,
+            preset,
+            edit,
+            name: preset.name,
+            desc: preset.desc,
+            color: edit.color || defColor,
+            strokeWidth: edit.strokeWidth !== undefined ? Number(edit.strokeWidth) : preset.defaultWidth,
+            lineStyle: edit.lineStyle || preset.defaultLineStyle || 'solid',
+            routeMode: edit.routeMode || 'orthogonal',
+            endStyle: edit.endStyle || preset.defaultEndStyle || 'none',
+            hidden: Boolean(edit.hidden),
+            labelText: preset.labelKey ? (state.texts[preset.labelKey] ?? '') : (edit.labelText || ''),
+            labelOffset: edit.labelOffset || { dx: 0, dy: 0 }
+          };
+        }
+        const cw = (state.customWires || []).find(w => w.id === wireId);
+        if (cw) {
+          return {
+            isCustom: true,
+            id: cw.id,
+            cw,
+            edit: cw,
+            name: cw.name || '自定义连线',
+            desc: `${cw.start?.termLabel || '起点'} → ${cw.end?.termLabel || '终点'}`,
+            color: cw.color || '#0284c7',
+            strokeWidth: cw.strokeWidth !== undefined ? Number(cw.strokeWidth) : 2.4,
+            lineStyle: cw.lineStyle || 'solid',
+            routeMode: cw.routeMode || 'orthogonal',
+            endStyle: cw.endStyle || 'dot',
+            hidden: false,
+            labelText: cw.labelText || '',
+            labelOffset: cw.labelOffset || { dx: 0, dy: 0 }
+          };
+        }
+        return null;
+      }
+
+      function buildCustomWireGeometry(cw) {
+        const s = resolveAnchor(cw.start);
+        const e = resolveAnchor(cw.end);
+        const wps = cw.waypoints || [];
+        if (cw.routeMode === 'straight') {
+          const pts = [s, ...wps, e];
+          const handles = [];
+          wps.forEach((wp, idx) => handles.push({ type: 'wp', wpIndex: idx, x: wp.x, y: wp.y }));
+          for (let i = 0; i < pts.length - 1; i++) {
+            handles.push({
+              type: 'add-wp',
+              insertIndex: i,
+              x: (pts[i].x + pts[i + 1].x) / 2,
+              y: (pts[i].y + pts[i + 1].y) / 2
+            });
+          }
+          return {
+            subPaths: [pts],
+            junctions: [],
+            endpoints: [s, e],
+            handles,
+            labelAnchor: { x: (s.x + e.x) / 2, y: (s.y + e.y) / 2 }
+          };
+        }
+        if (wps.length > 0) {
+          const pts = routeOrthogonalThrough([s, ...wps, e], cw.segOffsets || {});
+          const handles = wps.map((wp, idx) => ({ type: 'wp', wpIndex: idx, x: wp.x, y: wp.y }));
+          return {
+            subPaths: [pts],
+            junctions: [],
+            endpoints: [s, e],
+            handles,
+            labelAnchor: { x: (s.x + e.x) / 2, y: (s.y + e.y) / 2 }
+          };
+        }
+        const so = cw.segOffsets || {};
+        const dx = e.x - s.x;
+        const dy = e.y - s.y;
+        let pts;
+        let handles;
+        if (Math.abs(dx) >= Math.abs(dy)) {
+          const midX = (s.x + e.x) / 2 + (so.s1 || 0);
+          pts = [s, { x: midX, y: s.y }, { x: midX, y: e.y }, e];
+          handles = [{ type: 'seg', segKey: 's1', axis: 'x', x: midX, y: (s.y + e.y) / 2 }];
+        } else {
+          const midY = (s.y + e.y) / 2 + (so.s1 || 0);
+          pts = [s, { x: s.x, y: midY }, { x: e.x, y: midY }, e];
+          handles = [{ type: 'seg', segKey: 's1', axis: 'y', x: (s.x + e.x) / 2, y: midY }];
+        }
+        return {
+          subPaths: [pts],
+          junctions: [],
+          endpoints: [s, e],
+          handles,
+          labelAnchor: { x: (s.x + e.x) / 2, y: (s.y + e.y) / 2 }
+        };
+      }
+
+      // 缓存每条渲染后的连线几何（用于手柄、标签拖拽与重绘）
+      let renderedWireGeoMap = {};
 
       function applyStateToDOM() {
         // 1) 更新所有文本
@@ -2046,22 +3378,23 @@
           if (line) line.setAttribute('stroke', col);
         }
 
-        // 5) 同步控制器上相关线色元素（开关内部线色也随全开/复位/GND颜色变化）
+        // 5) 同步开关内部线色
         updateStaticAccents();
 
         // 6) 重新绘制动态连线
         renderDynamicWires();
 
-        // 7) 同步 Sidebar 表单
+        // 7) 同步编辑浮窗 & 手柄层 & Sidebar
+        syncWireInspectorUI();
+        renderEditorOverlay();
         syncSidebarInputs();
+        renderSidebarWireLists();
       }
 
       function updateStaticAccents() {
-        // 让室内功能控制开关内部导线与全开/复位色联动
         const swPanel = document.getElementById('mod-switch-panel');
         if (!swPanel) return;
         const lines = swPanel.querySelectorAll('line');
-        // 按顺序：开关1 橙线、斜杆、虚线、GND黑线；开关2 靛蓝线、斜杆、虚线、GND黑线
         if (lines.length >= 8) {
           lines[0].setAttribute('stroke', state.colors.fullOpenOrange);
           lines[2].setAttribute('stroke', state.colors.fullOpenOrange);
@@ -2072,23 +3405,84 @@
         }
       }
 
-      function makeWireGroup(wireId, layerKey, parent) {
-        const g = el('g', {
-          class: 'wire-group' + (highlightedWireId === wireId ? ' is-highlighted' : ''),
-          'data-wire-id': wireId
-        }, parent);
-        if (!state.layers[layerKey]) {
-          g.style.display = 'none';
+      function renderEndpointGlyphs(parent, subPaths, endpoints, endStyle, color, strokeWidth) {
+        if (endStyle === 'none') return;
+        if (endStyle === 'dot') {
+          const rEnd = Math.max(4.4, strokeWidth * 1.65);
+          endpoints.forEach((p, idx) => {
+            el('circle', {
+              cx: p.x,
+              cy: p.y,
+              r: idx === endpoints.length - 1 ? rEnd : Math.max(3.6, strokeWidth * 1.35),
+              fill: color,
+              stroke: '#ffffff',
+              'stroke-width': '1.6'
+            }, parent);
+          });
+        } else if (endStyle === 'arrow') {
+          const mainPts = subPaths[0];
+          if (mainPts && mainPts.length >= 2) {
+            const pEnd = mainPts[mainPts.length - 1];
+            let pPrev = mainPts[mainPts.length - 2];
+            for (let i = mainPts.length - 2; i >= 0; i--) {
+              if (Math.hypot(pEnd.x - mainPts[i].x, pEnd.y - mainPts[i].y) > 0.5) {
+                pPrev = mainPts[i];
+                break;
+              }
+            }
+            const dx = pEnd.x - pPrev.x;
+            const dy = pEnd.y - pPrev.y;
+            const len = Math.hypot(dx, dy);
+            if (len > 0.5) {
+              const ux = dx / len;
+              const uy = dy / len;
+              const arrowLen = Math.max(9.5, strokeWidth * 3.6);
+              const halfW = Math.max(4.5, strokeWidth * 1.85);
+              const bx = pEnd.x - ux * arrowLen;
+              const by = pEnd.y - uy * arrowLen;
+              const lx = bx - uy * halfW;
+              const ly = by + ux * halfW;
+              const rx = bx + uy * halfW;
+              const ry = by - ux * halfW;
+              el('polygon', {
+                points: `${pEnd.x.toFixed(1)},${pEnd.y.toFixed(1)} ${lx.toFixed(1)},${ly.toFixed(1)} ${rx.toFixed(1)},${ry.toFixed(1)}`,
+                fill: color
+              }, parent);
+            }
+          }
         }
-        g.addEventListener('click', (e) => {
-          if (e.target.hasAttribute('data-edit-key')) return;
-          e.stopPropagation();
-          selectWireHighlight(wireId);
-        });
-        return g;
       }
 
-      function addWireLabel(parent, x, y, w, h, strokeCol, textCol, editKey, fontSize = '10.5') {
+      function renderWireCapsuleLabel(parent, wireId, desc, anchor) {
+        const text = (desc.labelText || '').trim();
+        if (!text) return;
+        const off = desc.labelOffset || { dx: 0, dy: 0 };
+        const x = anchor.x + off.dx;
+        const y = anchor.y + off.dy;
+
+        const preset = desc.preset;
+        const fontSize = preset ? preset.labelFontSize : '10.5';
+        const baseW = preset ? preset.labelW : 0;
+        const estW = Math.max(54, text.length * (parseFloat(fontSize) * 1.05) + 18);
+        const w = preset && text === DEFAULT_TEXTS[preset.labelKey] ? baseW : Math.max(baseW, estW);
+        const h = preset ? preset.labelH : 20;
+        const borderCol = (preset && preset.labelBorder) ? (preset.labelBorder === 'none' ? 'none' : preset.labelBorder) : desc.color;
+        const textCol = (preset && preset.labelTextColor) ? preset.labelTextColor : desc.color;
+
+        if (anchor.leaderTo && off.dx === 0 && off.dy === 0) {
+          el('path', {
+            d: `M ${x + w / 2} ${y} L ${anchor.leaderTo.x} ${anchor.leaderTo.y}`,
+            stroke: desc.color,
+            'stroke-width': '1.8',
+            fill: 'none'
+          }, parent);
+        }
+
+        const lg = el('g', {
+          class: 'wire-label-group',
+          'data-wire-label-id': wireId
+        }, parent);
+
         el('rect', {
           x: x - w / 2,
           y: y - h / 2,
@@ -2096,19 +3490,96 @@
           height: h,
           rx: 4,
           fill: '#ffffff',
-          stroke: strokeCol,
-          'stroke-width': '1.1'
-        }, parent);
-        const t = el('text', {
-          'data-edit-key': editKey,
+          'fill-opacity': borderCol === 'none' ? '0.94' : '1',
+          stroke: borderCol === 'none' ? 'none' : borderCol,
+          'stroke-width': borderCol === 'none' ? '0' : '1.1'
+        }, lg);
+
+        const textAttrs = {
           x: x,
-          y: y + 4,
+          y: y + 3.8,
           'text-anchor': 'middle',
           fill: textCol,
           'font-size': fontSize,
           'font-weight': '700'
+        };
+        if (preset && preset.labelKey) {
+          textAttrs['data-edit-key'] = preset.labelKey;
+        } else {
+          textAttrs['data-custom-label-wire'] = wireId;
+        }
+        const t = el('text', textAttrs, lg);
+        t.textContent = text;
+      }
+
+      function renderWireEntity(desc, geo, parent) {
+        const isHighlighted = selectedWireId
+          ? selectedWireId === desc.id
+          : (highlightedGroupId && desc.preset && desc.preset.groupId === highlightedGroupId);
+
+        const g = el('g', {
+          class: 'wire-group' + (isHighlighted ? ' is-highlighted' : ''),
+          'data-wire-id': desc.id,
+          'data-group-id': desc.preset ? desc.preset.groupId : 'custom'
         }, parent);
-        t.textContent = state.texts[editKey] ?? '';
+
+        if (desc.preset && !state.layers[desc.preset.layer]) {
+          g.style.display = 'none';
+        }
+        if (desc.hidden) {
+          g.style.display = 'none';
+        }
+
+        const dash = dashArrayForStyle(desc.lineStyle);
+
+        // 1) 透明宽命中热区 + 高亮光晕层 + 主线段
+        geo.subPaths.forEach(pts => {
+          const d = ptsToPathD(pts);
+          el('path', { class: 'wire-hit-area', d }, g);
+          el('path', {
+            class: 'wire-halo',
+            d,
+            'stroke-width': String(desc.strokeWidth + 6)
+          }, g);
+          el('path', {
+            class: 'wire-main-path',
+            d,
+            fill: 'none',
+            stroke: desc.color,
+            'stroke-width': String(desc.strokeWidth),
+            'stroke-dasharray': dash,
+            'stroke-linejoin': 'round',
+            'stroke-linecap': 'round'
+          }, g);
+        });
+
+        // 2) 分支节点圆点
+        (geo.junctions || []).forEach(jp => {
+          el('circle', {
+            cx: jp.x,
+            cy: jp.y,
+            r: Math.max(3.6, desc.strokeWidth * 1.55),
+            fill: desc.color
+          }, g);
+        });
+
+        // 3) 端点样式
+        renderEndpointGlyphs(g, geo.subPaths, geo.endpoints || [], desc.endStyle, desc.color, desc.strokeWidth);
+
+        // 4) 线上胶囊标签
+        if (geo.labelAnchor) {
+          renderWireCapsuleLabel(g, desc.id, desc, geo.labelAnchor);
+        }
+
+        // 5) 点击选中连线（画线模式下放行给画布处理）
+        g.addEventListener('click', (e) => {
+          if (drawMode) return;
+          if (e.target.hasAttribute('data-edit-key')) return;
+          e.stopPropagation();
+          selectWire(desc.id);
+        });
+
+        renderedWireGeoMap[desc.id] = { desc, geo };
       }
 
       function renderDynamicWires() {
@@ -2116,323 +3587,49 @@
         const front = document.getElementById('dynamic-wires-front');
         back.innerHTML = '';
         front.innerHTML = '';
+        renderedWireGeoMap = {};
 
-        const c = state.colors;
-        const L = state.layers;
+        // 1) 渲染 25 条预设连线
+        getPresetWires().forEach(preset => {
+          const desc = getWireDescriptor(preset.id);
+          const geo = preset.build(desc.edit);
+          renderWireEntity(desc, geo, preset.front ? front : back);
+        });
 
-        // ---------- 1. RS485 总线 ----------
-        {
-          const g = makeWireGroup('rs485', 'rs485', back);
-          const camA = pt('camera', 197, 160);
-          const camB = pt('camera', 233, 160);
-          const inA = pt('access-inner', 486, 160);
-          const inB = pt('access-inner', 524, 160);
-          const outA = pt('access-outer', 758, 160);
-          const outB = pt('access-outer', 796, 160);
+        // 2) 渲染用户自绘连线
+        (state.customWires || []).forEach(cw => {
+          const desc = getWireDescriptor(cw.id);
+          const geo = buildCustomWireGeometry(cw);
+          renderWireEntity(desc, geo, front);
+        });
 
-          const busAY = Math.min(camA.y, inA.y, outA.y) - 42; // default 118
-          const busBY = Math.min(camB.y, inB.y, outB.y) - 24; // default 136
-
-          const minAX = Math.min(camA.x, inA.x, outA.x);
-          const maxAX = Math.max(camA.x, inA.x, outA.x);
-          const minBX = Math.min(camB.x, inB.x, outB.x);
-          const maxBX = Math.max(camB.x, inB.x, outB.x);
-
-          el('path', { d: `M ${minAX} ${busAY} L ${maxAX} ${busAY}`, fill: 'none', stroke: c.powerRed, 'stroke-width': '2.4' }, g);
-          [camA, inA, outA].forEach(p => {
-            el('path', { d: `M ${p.x} ${p.y} L ${p.x} ${busAY}`, fill: 'none', stroke: c.powerRed, 'stroke-width': '2.4' }, g);
-          });
-          el('circle', { cx: inA.x, cy: busAY, r: '4', fill: c.powerRed }, g);
-
-          el('path', { d: `M ${minBX} ${busBY} L ${maxBX} ${busBY}`, fill: 'none', stroke: c.gndBlack, 'stroke-width': '2.4' }, g);
-          [camB, inB, outB].forEach(p => {
-            el('path', { d: `M ${p.x} ${p.y} L ${p.x} ${busBY}`, fill: 'none', stroke: c.gndBlack, 'stroke-width': '2.4' }, g);
-          });
-          el('circle', { cx: inB.x, cy: busBY, r: '4', fill: c.gndBlack }, g);
-
-          const lblX = (camA.x + inA.x) / 2 + 13.5;
-          addWireLabel(g, lblX, busAY - 2, 106, 20, '#fca5a5', c.powerRed, 'wireRs485A', '11.5');
-          addWireLabel(g, lblX, busBY, 106, 20, '#cbd5e1', c.gndBlack, 'wireRs485B', '11.5');
-        }
-
-        // ---------- 2. 摄像机 Type-C 供电 ----------
-        {
-          const g = makeWireGroup('cam-pwr', 'cameraNet', back);
-          const p1 = pt('psu-camera', 124, 239);
-          const p2 = pt('camera', 152, 239);
-          const midX = (p1.x + p2.x) / 2;
-          el('path', {
-            d: `M ${p1.x} ${p1.y} L ${midX} ${p1.y} L ${midX} ${p2.y} L ${p2.x} ${p2.y}`,
-            fill: 'none', stroke: c.powerRed, 'stroke-width': '2.6', 'stroke-linejoin': 'round'
-          }, g);
-        }
-
-        // ---------- 3. 摄像机网线直连 ----------
-        {
-          const g = makeWireGroup('cam-net', 'cameraNet', back);
-          const p1 = pt('camera', 282, 239);
-          const p2 = pt('network-switch', 314, 205);
-          const midX = (p1.x + p2.x) / 2;
-          el('path', {
-            d: `M ${p1.x} ${p1.y} L ${midX} ${p1.y} L ${midX} ${p2.y} L ${p2.x} ${p2.y}`,
-            fill: 'none', stroke: c.noBlue, 'stroke-width': '2.2', 'stroke-dasharray': '5 3', 'stroke-linejoin': 'round'
-          }, g);
-          el('rect', { x: midX - 24, y: p2.y - 16, width: 38, height: 14, rx: 3, fill: '#ffffff', 'fill-opacity': '0.94' }, g);
-          const t = el('text', {
-            'data-edit-key': 'wireNetDirect', x: midX - 5, y: p2.y - 6, 'text-anchor': 'middle',
-            fill: c.noBlue, 'font-size': '9', 'font-weight': '700'
-          }, g);
-          t.textContent = state.texts.wireNetDirect;
-        }
-
-        // ---------- 4. 门禁1 供电 (内门通道 12V & GND) ----------
-        {
-          const g = makeWireGroup('access1-pwr', 'powerSupply', back);
-          const s1 = pt('psu-access-1', 204, 388);
-          const s2 = pt('psu-access-1', 204, 405);
-          const d1 = pt('access-inner', 568, 328);
-          const d2 = pt('access-inner', 534, 328);
-          const midX1 = 315 + (state.offsets['psu-access-1'].dx + state.offsets['access-inner'].dx) * 0.35;
-          const midY1 = 376 + state.offsets['access-inner'].dy * 0.5;
-          const midX2 = midX1 + 13;
-          const midY2 = midY1 + 16;
-
-          el('path', { d: `M ${s1.x} ${s1.y} L ${midX1} ${s1.y} L ${midX1} ${midY1} L ${d1.x} ${midY1} L ${d1.x} ${d1.y}`, fill: 'none', stroke: c.powerRed, 'stroke-width': '2.2', 'stroke-linejoin': 'round' }, g);
-          const t = el('text', { 'data-edit-key': 'wireAcc1Pwr', x: (s1.x + midX1) / 2 - 3, y: s1.y - 6, 'text-anchor': 'middle', fill: c.powerRed, 'font-size': '10.5', 'font-weight': '700' }, g);
-          t.textContent = state.texts.wireAcc1Pwr;
-          el('path', { d: `M ${s2.x} ${s2.y} L ${midX2} ${s2.y} L ${midX2} ${midY2} L ${d2.x} ${midY2} L ${d2.x} ${d2.y}`, fill: 'none', stroke: '#475569', 'stroke-width': '2.2', 'stroke-linejoin': 'round' }, g);
-        }
-
-        // ---------- 5. 门禁2 供电 (外门通道 12V & GND) ----------
-        {
-          const g = makeWireGroup('access2-pwr', 'powerSupply', back);
-          const s1 = pt('psu-access-2', 204, 474);
-          const s2 = pt('psu-access-2', 204, 492);
-          const d1 = pt('access-outer', 840, 328);
-          const d2 = pt('access-outer', 806, 328);
-          const midX1 = 290 + state.offsets['psu-access-2'].dx * 0.4;
-          const midY1 = 520 + (state.offsets['psu-access-2'].dy + state.offsets['main-controller'].dy) * 0.3;
-          const midX2 = midX1 - 16;
-          const midY2 = midY1 + 12;
-
-          el('path', { d: `M ${s1.x} ${s1.y} L ${midX1} ${s1.y} L ${midX1} ${midY1} L ${d1.x} ${midY1} L ${d1.x} ${d1.y}`, fill: 'none', stroke: c.powerRed, 'stroke-width': '2.2', 'stroke-linejoin': 'round' }, g);
-          const t = el('text', { 'data-edit-key': 'wireAcc2Pwr', x: (s1.x + midX1) / 2 + 1, y: s1.y - 6, 'text-anchor': 'middle', fill: c.powerRed, 'font-size': '10.5', 'font-weight': '700' }, g);
-          t.textContent = state.texts.wireAcc2Pwr;
-          el('path', { d: `M ${s2.x} ${s2.y} L ${midX2} ${s2.y} L ${midX2} ${midY2} L ${d2.x} ${midY2} L ${d2.x} ${d2.y}`, fill: 'none', stroke: '#475569', 'stroke-width': '2.2', 'stroke-linejoin': 'round' }, g);
-        }
-
-        // ---------- 6. 门禁 NO/COM 并联 → 内门读卡 ----------
-        {
-          const g = makeWireGroup('access-no-com', 'doorSignal', back);
-          const inNo = pt('access-inner', 432, 328);
-          const outNo = pt('access-outer', 704, 328);
-          const ctrlInBtn = pt('main-controller', 456, 574);
-          const busNoY = 414 + (state.offsets['access-inner'].dy + state.offsets['main-controller'].dy) * 0.4;
-
-          el('path', { d: `M ${inNo.x} ${inNo.y} L ${inNo.x} ${busNoY} L ${outNo.x} ${busNoY} L ${outNo.x} ${outNo.y}`, fill: 'none', stroke: c.powerRed, 'stroke-width': '2.4', 'stroke-linejoin': 'round' }, g);
-          el('path', { d: `M ${ctrlInBtn.x} ${busNoY} L ${ctrlInBtn.x} ${ctrlInBtn.y}`, fill: 'none', stroke: c.powerRed, 'stroke-width': '2.4' }, g);
-          el('circle', { cx: ctrlInBtn.x, cy: busNoY, r: '4', fill: c.powerRed }, g);
-          addWireLabel(g, (inNo.x + outNo.x) / 2 + 4, busNoY - 1, 136, 21, '#fca5a5', c.powerRed, 'wireAccNoInner', '10.5');
-
-          const inCom = pt('access-inner', 466, 328);
-          const outCom = pt('access-outer', 738, 328);
-          const ctrlInGnd = pt('main-controller', 504, 574);
-          const busComY = busNoY + 30;
-
-          el('path', { d: `M ${inCom.x} ${inCom.y} L ${inCom.x} ${busComY} L ${outCom.x} ${busComY} L ${outCom.x} ${outCom.y}`, fill: 'none', stroke: c.gndBlack, 'stroke-width': '2.4', 'stroke-linejoin': 'round' }, g);
-          el('path', { d: `M ${ctrlInGnd.x} ${busComY} L ${ctrlInGnd.x} ${ctrlInGnd.y}`, fill: 'none', stroke: c.gndBlack, 'stroke-width': '2.4' }, g);
-          el('circle', { cx: ctrlInGnd.x, cy: busComY, r: '4', fill: c.gndBlack }, g);
-          addWireLabel(g, (inCom.x + outCom.x) / 2 + 16, busComY - 1, 144, 21, '#94a3b8', c.gndBlack, 'wireAccComInner', '10.5');
-        }
-
-        // ---------- 7. 开门按钮 1 & 2 并联 → 外门读卡 ----------
-        {
-          const g = makeWireGroup('btn-no-com', 'doorSignal', back);
-          const b1No = pt('exit-btn-1', 990, 164);
-          const b1Com = pt('exit-btn-1', 1025, 164);
-          const b2No = pt('exit-btn-2', 1110, 164);
-          const b2Com = pt('exit-btn-2', 1145, 164);
-          const ctrlOutBtn = pt('main-controller', 574, 574);
-          const ctrlOutGnd = pt('main-controller', 622, 574);
-
-          const topNoY = Math.min(b1No.y, b2No.y) - 28; // default 136
-          const topComY = Math.min(b1Com.y, b2Com.y) - 14; // default 150
-          const dropNoX = Math.min(b1No.x, b2No.x) - 40; // default 950
-          const dropComX = (b1Com.x + b2Com.x) / 2 - 17; // default 1068
-          const corrComY = 474 + state.offsets['main-controller'].dy * 0.4;
-          const corrNoY = corrComY + 28; // default 502
-
-          // NO 黑线
-          el('path', { d: `M ${b1No.x} ${b1No.y} L ${b1No.x} ${topNoY} L ${b2No.x} ${topNoY} L ${b2No.x} ${b2No.y}`, fill: 'none', stroke: c.gndBlack, 'stroke-width': '2.2', 'stroke-linejoin': 'round' }, g);
-          el('path', { d: `M ${b1No.x} ${topNoY} L ${dropNoX} ${topNoY} L ${dropNoX} ${corrNoY} L ${ctrlOutGnd.x} ${corrNoY} L ${ctrlOutGnd.x} ${ctrlOutGnd.y}`, fill: 'none', stroke: c.gndBlack, 'stroke-width': '2.2', 'stroke-linejoin': 'round' }, g);
-          el('circle', { cx: b1No.x, cy: topNoY, r: '3.8', fill: c.gndBlack }, g);
-          el('circle', { cx: b1No.x, cy: b1No.y, r: '3', fill: '#ffffff', stroke: c.gndBlack, 'stroke-width': '1.5' }, g);
-          el('circle', { cx: b2No.x, cy: b2No.y, r: '3', fill: '#ffffff', stroke: c.gndBlack, 'stroke-width': '1.5' }, g);
-
-          // COM 红线
-          el('path', { d: `M ${b1Com.x} ${b1Com.y} L ${b1Com.x} ${topComY} L ${b2Com.x} ${topComY} L ${b2Com.x} ${b2Com.y}`, fill: 'none', stroke: c.powerRed, 'stroke-width': '2.2', 'stroke-linejoin': 'round' }, g);
-          el('path', { d: `M ${dropComX} ${topComY} L ${dropComX} ${corrComY} L ${ctrlOutBtn.x} ${corrComY} L ${ctrlOutBtn.x} ${ctrlOutBtn.y}`, fill: 'none', stroke: c.powerRed, 'stroke-width': '2.2', 'stroke-linejoin': 'round' }, g);
-          el('circle', { cx: dropComX, cy: topComY, r: '3.8', fill: c.powerRed }, g);
-          el('circle', { cx: b1Com.x, cy: b1Com.y, r: '3', fill: '#ffffff', stroke: c.powerRed, 'stroke-width': '1.5' }, g);
-          el('circle', { cx: b2Com.x, cy: b2Com.y, r: '3', fill: '#ffffff', stroke: c.powerRed, 'stroke-width': '1.5' }, g);
-
-          addWireLabel(g, (ctrlOutBtn.x + dropComX) / 2 - 1, corrComY - 1, 136, 21, '#fca5a5', c.powerRed, 'wireBtnComOuter', '10.5');
-          addWireLabel(g, (ctrlOutGnd.x + dropNoX) / 2 - 6, corrNoY - 1, 136, 21, '#94a3b8', c.gndBlack, 'wireBtnNoOuter', '10.5');
-        }
-
-        // ---------- 8. 全开 / 复位 / GND 控制连线 ----------
-        {
-          const g = makeWireGroup('switches-wire', 'controlSwitches', back);
-          const cFull = pt('main-controller', 740, 574);
-          const cRst = pt('main-controller', 788, 574);
-          const cGnd = pt('main-controller', 812, 574);
-          const sFull = pt('switch-panel', 1260, 267);
-          const sRst = pt('switch-panel', 1260, 393);
-          const sGnd1 = pt('switch-panel', 1528, 267);
-          const sGnd2 = pt('switch-panel', 1528, 393);
-
-          const corrY1 = cFull.y - 27; // default 547
-          const corrY2 = cRst.y - 17; // default 557
-          const corrY3 = cGnd.y - 7;  // default 567
-          const riseX1 = sFull.x - 54; // default 1206
-          const riseX2 = sRst.x - 42;  // default 1218
-          const riseX3 = sGnd1.x + 26; // default 1554
-
-          el('path', { d: `M ${cFull.x} ${cFull.y} L ${cFull.x} ${corrY1} L ${riseX1} ${corrY1} L ${riseX1} ${sFull.y} L ${sFull.x} ${sFull.y}`, fill: 'none', stroke: c.fullOpenOrange, 'stroke-width': '2.4', 'stroke-linejoin': 'round' }, g);
-          el('path', { d: `M ${cRst.x} ${cRst.y} L ${cRst.x} ${corrY2} L ${riseX2} ${corrY2} L ${riseX2} ${sRst.y} L ${sRst.x} ${sRst.y}`, fill: 'none', stroke: c.resetIndigo, 'stroke-width': '2.4', 'stroke-linejoin': 'round' }, g);
-          el('path', { d: `M ${cGnd.x} ${cGnd.y} L ${cGnd.x} ${corrY3} L ${riseX3} ${corrY3} L ${riseX3} ${sGnd1.y} L ${sGnd1.x} ${sGnd1.y}`, fill: 'none', stroke: c.gndBlack, 'stroke-width': '2.4', 'stroke-linejoin': 'round' }, g);
-          el('path', { d: `M ${sGnd2.x} ${sGnd2.y} L ${riseX3} ${sGnd2.y}`, fill: 'none', stroke: c.gndBlack, 'stroke-width': '2.4' }, g);
-          el('circle', { cx: riseX3, cy: sGnd2.y, r: '4', fill: c.gndBlack }, g);
-
-          addWireLabel(g, cFull.x + 166, corrY1, 128, 19, '#fdba74', '#c2410c', 'wireFullOpen', '10');
-          addWireLabel(g, cRst.x + 260, corrY2, 128, 19, '#a5b4fc', '#4338ca', 'wireReset', '10');
-          addWireLabel(g, Math.min(riseX3 - 181, cGnd.x + 561), corrY3, 166, 19, '#94a3b8', c.gndBlack, 'wireSwitchGnd', '10');
-        }
-
-        // ---------- 9. 控制器 → 内门磁力锁 (4线) ----------
-        {
-          const g = makeWireGroup('lock-inner', 'lockOutput', back);
-          const pairs = [
-            { s: pt('main-controller', 456, 824), d: pt('maglock-inner', 438, 958), col: c.noBlue, off: 14 },
-            { s: pt('main-controller', 480, 824), d: pt('maglock-inner', 476, 958), col: c.comGreen, off: 22 },
-            { s: pt('main-controller', 528, 824), d: pt('maglock-inner', 552, 958), col: c.gndBlack, off: 30 },
-            { s: pt('main-controller', 552, 824), d: pt('maglock-inner', 590, 958), col: c.powerRed, off: 38 }
-          ];
-          pairs.forEach(p => {
-            const elbowY = p.s.y + p.off;
-            el('path', {
-              d: `M ${p.s.x} ${p.s.y} L ${p.s.x} ${elbowY} L ${p.d.x} ${elbowY} L ${p.d.x} ${p.d.y}`,
-              fill: 'none', stroke: p.col, 'stroke-width': '2.4', 'stroke-linejoin': 'round'
-            }, g);
-          });
-        }
-
-        // ---------- 10. 控制器 → 外门磁力锁 (4线) ----------
-        {
-          const g = makeWireGroup('lock-outer', 'lockOutput', back);
-          const pairs = [
-            { s: pt('main-controller', 600, 824), d: pt('maglock-outer', 738, 958), col: c.noBlue, off: 14 },
-            { s: pt('main-controller', 624, 824), d: pt('maglock-outer', 776, 958), col: c.comGreen, off: 22 },
-            { s: pt('main-controller', 672, 824), d: pt('maglock-outer', 852, 958), col: c.gndBlack, off: 30 },
-            { s: pt('main-controller', 696, 824), d: pt('maglock-outer', 890, 958), col: c.powerRed, off: 38 }
-          ];
-          pairs.forEach(p => {
-            const elbowY = p.s.y + p.off;
-            el('path', {
-              d: `M ${p.s.x} ${p.s.y} L ${p.s.x} ${elbowY} L ${p.d.x} ${elbowY} L ${p.d.x} ${p.d.y}`,
-              fill: 'none', stroke: p.col, 'stroke-width': '2.4', 'stroke-linejoin': 'round'
-            }, g);
-          });
-        }
-
-        // ---------- 11. 主机 +12V 直流供电 ----------
-        {
-          const g = makeWireGroup('ctrl-pwr', 'powerSupply', back);
-          const p1 = pt('psu-controller', 1246, 896);
-          const p2 = pt('main-controller', 860, 812);
-          const midX = 1188 + (state.offsets['psu-controller'].dx + state.offsets['main-controller'].dx) * 0.4;
-          const midY = p2.y + 24; // default 836
-          el('path', {
-            d: `M ${p1.x} ${p1.y} L ${midX} ${p1.y} L ${midX} ${midY} L ${p2.x} ${midY} L ${p2.x} ${p2.y}`,
-            fill: 'none', stroke: c.powerRed, 'stroke-width': '2.4', 'stroke-linejoin': 'round'
-          }, g);
-          addWireLabel(g, (p2.x + midX) / 2 + 16, midY - 1, 120, 20, '#fca5a5', c.powerRed, 'wireCtrlPwr', '10.5');
-        }
-
-        // ---------- 12. 内门禁 Sensor & GND → 门磁 COM/NO (置于前层) ----------
-        {
-          const g = makeWireGroup('sensor-inner', 'doorSensor', front);
-          const sSen = pt('access-inner', 602, 328);
-          const sGnd = pt('access-inner', 636, 328);
-          const lCom = pt('maglock-inner', 476, 958);
-          const lNo = pt('maglock-inner', 438, 958);
-
-          const corrX1 = 366 + state.offsets['maglock-inner'].dx * 0.4;
-          const corrX2 = corrX1 + 16;
-          const topY1 = sSen.y + 16;
-          const topY2 = sGnd.y + 28;
-          const botY1 = lCom.y - 50; // default 908
-          const botY2 = lNo.y - 34;  // default 924
-
-          el('path', { d: `M ${sSen.x} ${sSen.y} L ${sSen.x} ${topY1} L ${corrX1} ${topY1} L ${corrX1} ${botY1} L ${lCom.x} ${botY1}`, fill: 'none', stroke: c.sensorPurple, 'stroke-width': '2.4', 'stroke-linejoin': 'round' }, g);
-          el('path', { d: `M ${sGnd.x} ${sGnd.y} L ${sGnd.x} ${topY2} L ${corrX2} ${topY2} L ${corrX2} ${botY2} L ${lNo.x} ${botY2}`, fill: 'none', stroke: c.gndCyan, 'stroke-width': '2.4', 'stroke-linejoin': 'round' }, g);
-
-          el('circle', { cx: lCom.x, cy: botY1, r: '5.5', fill: c.sensorPurple, stroke: '#ffffff', 'stroke-width': '1.8' }, g);
-          el('circle', { cx: lNo.x, cy: botY2, r: '5.5', fill: c.gndCyan, stroke: '#ffffff', 'stroke-width': '1.8' }, g);
-
-          const lblX = corrX1 - 108;
-          addWireLabel(g, lblX, botY1 - 1, 188, 20, '#a78bfa', '#5b21b6', 'wireSensorInCom', '10.5');
-          el('path', { d: `M ${lblX + 94} ${botY1} L ${corrX1} ${botY1}`, stroke: c.sensorPurple, 'stroke-width': '1.8' }, g);
-          addWireLabel(g, lblX, botY2, 188, 20, '#67e8f9', c.gndCyan, 'wireSensorInNo', '10.5');
-          el('path', { d: `M ${lblX + 94} ${botY2} L ${corrX2} ${botY2}`, stroke: c.gndCyan, 'stroke-width': '1.8' }, g);
-        }
-
-        // ---------- 13. 外门禁 Sensor & GND → 门磁 COM/NO (置于前层) ----------
-        {
-          const g = makeWireGroup('sensor-outer', 'doorSensor', front);
-          const sSen = pt('access-outer', 874, 328);
-          const sGnd = pt('access-outer', 908, 328);
-          const lCom = pt('maglock-outer', 776, 958);
-          const lNo = pt('maglock-outer', 738, 958);
-
-          const corrX1 = 1146 + state.offsets['maglock-outer'].dx * 0.4;
-          const corrX2 = corrX1 + 16;
-          const topY1 = sSen.y + 16;
-          const topY2 = sGnd.y + 28;
-          const botY1 = lCom.y - 50; // default 908
-          const botY2 = lNo.y - 34;  // default 924
-
-          el('path', { d: `M ${sSen.x} ${sSen.y} L ${sSen.x} ${topY1} L ${corrX1} ${topY1} L ${corrX1} ${botY1} L ${lCom.x} ${botY1}`, fill: 'none', stroke: c.sensorPurple, 'stroke-width': '2.4', 'stroke-linejoin': 'round' }, g);
-          el('path', { d: `M ${sGnd.x} ${sGnd.y} L ${sGnd.x} ${topY2} L ${corrX2} ${topY2} L ${corrX2} ${botY2} L ${lNo.x} ${botY2}`, fill: 'none', stroke: c.gndCyan, 'stroke-width': '2.4', 'stroke-linejoin': 'round' }, g);
-
-          el('circle', { cx: lCom.x, cy: botY1, r: '5.5', fill: c.sensorPurple, stroke: '#ffffff', 'stroke-width': '1.8' }, g);
-          el('circle', { cx: lNo.x, cy: botY2, r: '5.5', fill: c.gndCyan, stroke: '#ffffff', 'stroke-width': '1.8' }, g);
-
-          const lblX = corrX1 - 120;
-          addWireLabel(g, lblX, botY1 - 1, 188, 20, '#a78bfa', '#5b21b6', 'wireSensorOutCom', '10.5');
-          addWireLabel(g, lblX, botY2, 188, 20, '#67e8f9', c.gndCyan, 'wireSensorOutNo', '10.5');
-        }
-
-        // 更新 SVG 高亮类
-        svgEl.classList.toggle('has-wire-highlight', Boolean(highlightedWireId));
+        svgEl.classList.toggle('has-wire-highlight', Boolean(selectedWireId || highlightedGroupId));
       }
 
       // ==================== 4. 内联双击编辑文本 ====================
       const inlineEditor = document.getElementById('inline-text-editor');
       let currentEditKey = null;
+      let currentEditCustomWireId = null;
 
       svgEl.addEventListener('dblclick', (e) => {
-        if (!editMode) return;
-        const target = e.target.closest('[data-edit-key]');
+        if (!editMode || drawMode) return;
+        const target = e.target.closest('[data-edit-key], [data-custom-label-wire]');
         if (!target) return;
         e.preventDefault();
         e.stopPropagation();
 
-        const key = target.getAttribute('data-edit-key');
-        currentEditKey = key;
-        const rect = target.getBoundingClientRect();
+        if (target.hasAttribute('data-edit-key')) {
+          currentEditKey = target.getAttribute('data-edit-key');
+          currentEditCustomWireId = null;
+          inlineEditor.value = state.texts[currentEditKey] !== undefined ? state.texts[currentEditKey] : target.textContent;
+        } else {
+          currentEditKey = null;
+          currentEditCustomWireId = target.getAttribute('data-custom-label-wire');
+          const desc = getWireDescriptor(currentEditCustomWireId);
+          inlineEditor.value = desc ? desc.labelText : target.textContent;
+        }
 
-        inlineEditor.value = state.texts[key] !== undefined ? state.texts[key] : target.textContent;
+        const rect = target.getBoundingClientRect();
         const width = Math.max(rect.width + 48, 150);
         const left = Math.min(Math.max(12, rect.left + rect.width / 2 - width / 2), window.innerWidth - width - 16);
         const top = Math.min(Math.max(60, rect.top - 6), window.innerHeight - 46);
@@ -2446,21 +3643,38 @@
       });
 
       function commitInlineEdit() {
-        if (!currentEditKey) return;
+        if (!currentEditKey && !currentEditCustomWireId) return;
         const val = inlineEditor.value;
-        const oldVal = state.texts[currentEditKey];
-        if (val !== oldVal) {
-          pushUndo();
-          state.texts[currentEditKey] = val;
-          markDirty(true);
-          applyStateToDOM();
-          showToast('文字已更新');
+        if (currentEditKey) {
+          const oldVal = state.texts[currentEditKey];
+          if (val !== oldVal) {
+            pushUndo();
+            state.texts[currentEditKey] = val;
+            markDirty(true);
+            applyStateToDOM();
+            showToast('文字已更新');
+          }
+        } else if (currentEditCustomWireId) {
+          const desc = getWireDescriptor(currentEditCustomWireId);
+          if (desc && val !== desc.labelText) {
+            pushUndo();
+            if (desc.isCustom) {
+              desc.cw.labelText = val;
+            } else {
+              if (!state.wireEdits[desc.id]) state.wireEdits[desc.id] = {};
+              state.wireEdits[desc.id].labelText = val;
+            }
+            markDirty(true);
+            applyStateToDOM();
+            showToast('连线标签已更新');
+          }
         }
         closeInlineEdit();
       }
 
       function closeInlineEdit() {
         currentEditKey = null;
+        currentEditCustomWireId = null;
         inlineEditor.style.display = 'none';
       }
 
@@ -2478,7 +3692,7 @@
         commitInlineEdit();
       });
 
-      // ==================== 5. 拖拽设备卡片 + 画布缩放平移 ====================
+      // ==================== 5. 覆盖层（模块框 / 连线手柄 / 画线吸附预览） ====================
       const viewport = document.getElementById('canvas-viewport');
       const stage = document.getElementById('canvas-stage');
       const overlayLayer = document.getElementById('editor-overlay-layer');
@@ -2492,27 +3706,271 @@
         return ptObj.matrixTransform(ctm.inverse());
       }
 
+      let hoveredModuleEl = null;
+
+      function renderEditorOverlay() {
+        overlayLayer.innerHTML = '';
+
+        // 1) 模块悬停虚线框
+        if (hoveredModuleEl && editMode && !drawMode) {
+          const bbox = hoveredModuleEl.getBBox();
+          const modId = hoveredModuleEl.getAttribute('data-module-id');
+          const o = state.offsets[modId] || { dx: 0, dy: 0 };
+          el('rect', {
+            class: 'module-hover-box',
+            x: bbox.x + o.dx - 5,
+            y: bbox.y + o.dy - 5,
+            width: bbox.width + 10,
+            height: bbox.height + 10
+          }, overlayLayer);
+        }
+
+        // 2) 选中连线的可拖拽手柄
+        if (selectedWireId && editMode && !drawMode) {
+          const entry = renderedWireGeoMap[selectedWireId];
+          if (entry && !entry.desc.hidden) {
+            const { geo } = entry;
+            (geo.handles || []).forEach((h) => {
+              if (h.type === 'seg') {
+                const isY = h.axis === 'y';
+                const w = isY ? 22 : 10;
+                const ht = isY ? 10 : 22;
+                el('rect', {
+                  class: 'wire-seg-handle',
+                  x: h.x - w / 2,
+                  y: h.y - ht / 2,
+                  width: w,
+                  height: ht,
+                  rx: 4,
+                  style: `cursor:${isY ? 'ns-resize' : 'ew-resize'}`,
+                  'data-wire-handle': 'seg',
+                  'data-seg-key': h.segKey,
+                  'data-axis': h.axis
+                }, overlayLayer);
+                el('line', {
+                  x1: isY ? h.x - 5 : h.x,
+                  y1: isY ? h.y : h.y - 5,
+                  x2: isY ? h.x + 5 : h.x,
+                  y2: isY ? h.y : h.y + 5,
+                  stroke: '#0284c7',
+                  'stroke-width': '1.6',
+                  'stroke-linecap': 'round',
+                  'pointer-events': 'none'
+                }, overlayLayer);
+              } else if (h.type === 'wp') {
+                el('circle', {
+                  class: 'wire-pt-handle',
+                  cx: h.x,
+                  cy: h.y,
+                  r: 6,
+                  'data-wire-handle': 'wp',
+                  'data-wp-index': h.wpIndex
+                }, overlayLayer);
+              } else if (h.type === 'add-wp') {
+                el('circle', {
+                  class: 'wire-add-pt-handle',
+                  cx: h.x,
+                  cy: h.y,
+                  r: 4.5,
+                  'data-wire-handle': 'add-wp',
+                  'data-insert-index': h.insertIndex
+                }, overlayLayer);
+              }
+            });
+          }
+        }
+
+        // 3) 画线模式预览与端子智能吸附提示圈
+        if (drawMode && drawSession) {
+          const pts = drawSession.points || [];
+          const cur = drawSession.snapTerm
+            ? { x: drawSession.snapTerm.px, y: drawSession.snapTerm.py }
+            : drawSession.cursorPt;
+
+          if (pts.length >= 1 && cur) {
+            const rawAnchors = [...pts.map(p => resolveAnchor(p)), cur];
+            const previewPts = drawConfig.routeMode === 'orthogonal'
+              ? routeOrthogonalThrough(rawAnchors)
+              : rawAnchors;
+            el('path', {
+              class: 'draw-preview-path',
+              d: ptsToPathD(previewPts),
+              stroke: drawConfig.color,
+              'stroke-width': String(drawConfig.strokeWidth)
+            }, overlayLayer);
+          }
+
+          pts.forEach(p => {
+            const rp = resolveAnchor(p);
+            el('circle', {
+              cx: rp.x,
+              cy: rp.y,
+              r: 4.5,
+              fill: drawConfig.color,
+              stroke: '#ffffff',
+              'stroke-width': '1.6',
+              'pointer-events': 'none'
+            }, overlayLayer);
+          });
+
+          if (drawSession.snapTerm) {
+            const st = drawSession.snapTerm;
+            el('circle', { class: 'terminal-snap-ring', cx: st.px, cy: st.py, r: 10 }, overlayLayer);
+            el('circle', { class: 'terminal-snap-dot', cx: st.px, cy: st.py, r: 4 }, overlayLayer);
+            const lblW = Math.max(70, st.label.length * 10 + 18);
+            const lblX = Math.min(Math.max(lblW / 2 + 10, st.px), 1590 - lblW / 2);
+            const lblY = st.py > 55 ? st.py - 24 : st.py + 26;
+            el('rect', {
+              x: lblX - lblW / 2,
+              y: lblY - 10,
+              width: lblW,
+              height: 20,
+              rx: 5,
+              fill: '#0f172a',
+              'fill-opacity': '0.9',
+              'pointer-events': 'none'
+            }, overlayLayer);
+            const tt = el('text', {
+              x: lblX,
+              y: lblY + 3.5,
+              'text-anchor': 'middle',
+              fill: '#38bdf8',
+              'font-size': '10.5',
+              'font-weight': '700',
+              'pointer-events': 'none'
+            }, overlayLayer);
+            tt.textContent = st.label;
+          }
+        }
+      }
+
+      // ==================== 6. 指针交互：设备拖拽 + 手柄拖拽 + 标签拖拽 + 画线 + 平移 ====================
       let dragModuleState = null;
+      let dragHandleState = null;
+      let dragLabelState = null;
       let panState = null;
       let spacePressed = false;
 
       svgEl.addEventListener('pointerdown', (e) => {
         if (e.button !== 0 && e.button !== 1) return;
-        if (currentEditKey) return;
+        if (currentEditKey || currentEditCustomWireId) return;
 
-        // 中键或浏览模式或按住空格 -> 画布平移
-        if (e.button === 1 || !editMode || spacePressed) {
+        // 中键 / 平移模式 / 按住空格 -> 平移画布
+        if (e.button === 1 || (!editMode && !drawMode) || spacePressed) {
           panState = { startX: e.clientX, startY: e.clientY, origPanX: panX, origPanY: panY };
           viewport.classList.add('panning');
           return;
         }
 
-        // 如果点击的是可编辑文本（等双击），不立即触发重度拖拽，仅在移动超过阈值时才开始拖拽
+        // 画线模式下，由 click / dblclick 处理放置点，避免触发模块拖拽
+        if (drawMode) {
+          return;
+        }
+
+        // A) 检测是否按在连线手柄上
+        const handleEl = e.target.closest('[data-wire-handle]');
+        if (handleEl && selectedWireId) {
+          e.stopPropagation();
+          e.preventDefault();
+          const hType = handleEl.getAttribute('data-wire-handle');
+          const svgPt = clientToSVG(e.clientX, e.clientY);
+          const desc = getWireDescriptor(selectedWireId);
+          if (!desc) return;
+
+          const snapshotBefore = cloneState(state);
+
+          if (hType === 'seg') {
+            const segKey = handleEl.getAttribute('data-seg-key');
+            const axis = handleEl.getAttribute('data-axis');
+            const so = desc.edit.segOffsets || {};
+            dragHandleState = {
+              kind: 'seg',
+              wireId: selectedWireId,
+              isCustom: desc.isCustom,
+              segKey,
+              axis,
+              startSvgX: svgPt.x,
+              startSvgY: svgPt.y,
+              origOffset: so[segKey] || 0,
+              moved: false,
+              snapshotBefore
+            };
+          } else if (hType === 'wp') {
+            const wpIndex = parseInt(handleEl.getAttribute('data-wp-index'), 10);
+            const wps = desc.isCustom ? (desc.cw.waypoints || []) : (desc.edit.customWaypoints || []);
+            const origWp = wps[wpIndex] || { x: svgPt.x, y: svgPt.y };
+            dragHandleState = {
+              kind: 'wp',
+              wireId: selectedWireId,
+              isCustom: desc.isCustom,
+              wpIndex,
+              startSvgX: svgPt.x,
+              startSvgY: svgPt.y,
+              origX: origWp.x,
+              origY: origWp.y,
+              moved: false,
+              snapshotBefore
+            };
+          } else if (hType === 'add-wp') {
+            const insertIndex = parseInt(handleEl.getAttribute('data-insert-index'), 10);
+            let targetArr;
+            if (desc.isCustom) {
+              if (!desc.cw.waypoints) desc.cw.waypoints = [];
+              targetArr = desc.cw.waypoints;
+            } else {
+              if (!state.wireEdits[desc.id]) state.wireEdits[desc.id] = {};
+              if (!state.wireEdits[desc.id].customWaypoints) state.wireEdits[desc.id].customWaypoints = [];
+              targetArr = state.wireEdits[desc.id].customWaypoints;
+            }
+            const newPt = { x: Math.round(svgPt.x), y: Math.round(svgPt.y) };
+            targetArr.splice(insertIndex, 0, newPt);
+            applyStateToDOM();
+            dragHandleState = {
+              kind: 'wp',
+              wireId: selectedWireId,
+              isCustom: desc.isCustom,
+              wpIndex: insertIndex,
+              startSvgX: svgPt.x,
+              startSvgY: svgPt.y,
+              origX: newPt.x,
+              origY: newPt.y,
+              moved: true,
+              snapshotBefore
+            };
+          }
+          return;
+        }
+
+        // B) 检测是否按在连线标签上（支持拖动标签位置）
+        const labelEl = e.target.closest('[data-wire-label-id]');
+        if (labelEl) {
+          const wId = labelEl.getAttribute('data-wire-label-id');
+          if (selectedWireId !== wId) {
+            selectWire(wId);
+          }
+          const desc = getWireDescriptor(wId);
+          if (desc) {
+            const svgPt = clientToSVG(e.clientX, e.clientY);
+            const origOff = desc.labelOffset || { dx: 0, dy: 0 };
+            dragLabelState = {
+              wireId: wId,
+              isCustom: desc.isCustom,
+              startSvgX: svgPt.x,
+              startSvgY: svgPt.y,
+              origDx: origOff.dx,
+              origDy: origOff.dy,
+              moved: false,
+              snapshotBefore: cloneState(state)
+            };
+          }
+          return;
+        }
+
+        // C) 检测设备卡片拖拽
         const modEl = e.target.closest('[data-module-id]');
         if (!modEl) {
-          // 点击空白取消连线高亮
-          if (highlightedWireId && !e.target.closest('.wire-group')) {
-            selectWireHighlight(null);
+          if ((selectedWireId || highlightedGroupId) && !e.target.closest('.wire-group')) {
+            selectWire(null);
           }
           return;
         }
@@ -2540,10 +3998,69 @@
           return;
         }
 
+        if (dragHandleState) {
+          const curPt = clientToSVG(e.clientX, e.clientY);
+          const dx = curPt.x - dragHandleState.startSvgX;
+          const dy = curPt.y - dragHandleState.startSvgY;
+          if (!dragHandleState.moved && Math.hypot(dx, dy) < 2) return;
+          dragHandleState.moved = true;
+
+          const desc = getWireDescriptor(dragHandleState.wireId);
+          if (!desc) return;
+
+          if (dragHandleState.kind === 'seg') {
+            const rawDelta = dragHandleState.axis === 'x' ? dx : dy;
+            let nextOffset = dragHandleState.origOffset + rawDelta;
+            if (snapToGrid) nextOffset = Math.round(nextOffset / 5) * 5;
+            if (dragHandleState.isCustom) {
+              if (!desc.cw.segOffsets) desc.cw.segOffsets = {};
+              desc.cw.segOffsets[dragHandleState.segKey] = nextOffset;
+            } else {
+              if (!state.wireEdits[desc.id]) state.wireEdits[desc.id] = {};
+              if (!state.wireEdits[desc.id].segOffsets) state.wireEdits[desc.id].segOffsets = {};
+              state.wireEdits[desc.id].segOffsets[dragHandleState.segKey] = nextOffset;
+            }
+          } else if (dragHandleState.kind === 'wp') {
+            let nx = dragHandleState.origX + dx;
+            let ny = dragHandleState.origY + dy;
+            if (snapToGrid) {
+              nx = Math.round(nx / 10) * 10;
+              ny = Math.round(ny / 10) * 10;
+            }
+            const arr = dragHandleState.isCustom
+              ? desc.cw.waypoints
+              : state.wireEdits[desc.id].customWaypoints;
+            if (arr && arr[dragHandleState.wpIndex]) {
+              arr[dragHandleState.wpIndex] = { x: nx, y: ny };
+            }
+          }
+          applyStateToDOM();
+          return;
+        }
+
+        if (dragLabelState) {
+          const curPt = clientToSVG(e.clientX, e.clientY);
+          const dx = curPt.x - dragLabelState.startSvgX;
+          const dy = curPt.y - dragLabelState.startSvgY;
+          if (!dragLabelState.moved && Math.hypot(dx, dy) < 3) return;
+          dragLabelState.moved = true;
+          const nextDx = Math.round(dragLabelState.origDx + dx);
+          const nextDy = Math.round(dragLabelState.origDy + dy);
+          if (dragLabelState.isCustom) {
+            const cw = state.customWires.find(w => w.id === dragLabelState.wireId);
+            if (cw) cw.labelOffset = { dx: nextDx, dy: nextDy };
+          } else {
+            if (!state.wireEdits[dragLabelState.wireId]) state.wireEdits[dragLabelState.wireId] = {};
+            state.wireEdits[dragLabelState.wireId].labelOffset = { dx: nextDx, dy: nextDy };
+          }
+          applyStateToDOM();
+          return;
+        }
+
         if (dragModuleState) {
           const curPt = clientToSVG(e.clientX, e.clientY);
-          let rawDx = curPt.x - dragModuleState.startSvgX;
-          let rawDy = curPt.y - dragModuleState.startSvgY;
+          const rawDx = curPt.x - dragModuleState.startSvgX;
+          const rawDy = curPt.y - dragModuleState.startSvgY;
           if (!dragModuleState.moved && Math.hypot(rawDx, rawDy) < 3) return;
 
           dragModuleState.moved = true;
@@ -2558,14 +4075,47 @@
 
           state.offsets[dragModuleState.modId] = { dx: newDx, dy: newDy };
           applyStateToDOM();
-          showHoverOutline(dragModuleState.modEl);
+          return;
+        }
+
+        // 画线模式悬停实时吸附与预览
+        if (drawMode && e.target.closest && e.target.closest('#wiring-diagram')) {
+          const curPt = clientToSVG(e.clientX, e.clientY);
+          const snap = findNearestTerminal(curPt.x, curPt.y, 18);
+          if (!drawSession) drawSession = { points: [], cursorPt: curPt, snapTerm: snap };
+          drawSession.cursorPt = snap ? { x: snap.px, y: snap.py } : {
+            x: snapToGrid ? Math.round(curPt.x / 10) * 10 : Math.round(curPt.x),
+            y: snapToGrid ? Math.round(curPt.y / 10) * 10 : Math.round(curPt.y)
+          };
+          drawSession.snapTerm = snap;
+          renderEditorOverlay();
         }
       });
 
       window.addEventListener('pointerup', () => {
         if (panState) {
           panState = null;
-          if (editMode && !spacePressed) viewport.classList.remove('panning');
+          if ((editMode || drawMode) && !spacePressed) viewport.classList.remove('panning');
+        }
+        if (dragHandleState) {
+          if (dragHandleState.moved) {
+            undoStack.push(dragHandleState.snapshotBefore);
+            if (undoStack.length > 40) undoStack.shift();
+            redoStack = [];
+            updateHistoryButtons();
+            markDirty(true);
+          }
+          dragHandleState = null;
+        }
+        if (dragLabelState) {
+          if (dragLabelState.moved) {
+            undoStack.push(dragLabelState.snapshotBefore);
+            if (undoStack.length > 40) undoStack.shift();
+            redoStack = [];
+            updateHistoryButtons();
+            markDirty(true);
+          }
+          dragLabelState = null;
         }
         if (dragModuleState) {
           dragModuleState.modEl.classList.remove('is-dragging');
@@ -2577,36 +4127,135 @@
             markDirty(true);
           }
           dragModuleState = null;
-          overlayLayer.innerHTML = '';
+          hoveredModuleEl = null;
+          renderEditorOverlay();
         }
       });
 
-      function showHoverOutline(modEl) {
-        overlayLayer.innerHTML = '';
-        if (!modEl || !editMode) return;
-        const bbox = modEl.getBBox();
-        const modId = modEl.getAttribute('data-module-id');
-        const o = state.offsets[modId] || { dx: 0, dy: 0 };
-        el('rect', {
-          class: 'module-hover-box',
-          x: bbox.x + o.dx - 5,
-          y: bbox.y + o.dy - 5,
-          width: bbox.width + 10,
-          height: bbox.height + 10
-        }, overlayLayer);
+      // ==================== 7. 画线模式点击与完成逻辑 ====================
+      function updateDrawStatusUI() {
+        const tip = document.getElementById('draw-status-tip');
+        const finBtn = document.getElementById('btn-draw-finish');
+        const ptsCount = drawSession ? drawSession.points.length : 0;
+        if (ptsCount === 0) {
+          tip.textContent = '点击端子或画布起点（支持端子智能吸附）';
+          finBtn.style.display = 'none';
+        } else if (ptsCount === 1) {
+          tip.textContent = '点击中间拐点，或点击目标端子 / 双击画布完成';
+          finBtn.style.display = 'none';
+        } else {
+          tip.textContent = `已设 ${ptsCount} 点 · 点击目标端子 / 双击完成 / Esc取消`;
+          finBtn.style.display = 'inline-flex';
+        }
       }
 
+      function finishCurrentDrawing() {
+        if (!drawSession || drawSession.points.length < 2) return;
+        const pts = drawSession.points;
+        const startAnchor = pts[0];
+        const endAnchor = pts[pts.length - 1];
+        const waypoints = pts.slice(1, -1).map(p => ({ x: p.x, y: p.y }));
+
+        pushUndo();
+        const newId = 'cw-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6);
+        const idxNum = (state.customWires || []).length + 1;
+        const newWire = {
+          id: newId,
+          name: `自定义连线 ${idxNum}`,
+          start: startAnchor,
+          end: endAnchor,
+          waypoints,
+          segOffsets: {},
+          color: drawConfig.color,
+          strokeWidth: drawConfig.strokeWidth,
+          lineStyle: drawConfig.lineStyle,
+          routeMode: drawConfig.routeMode,
+          endStyle: drawConfig.endStyle,
+          labelText: '',
+          labelOffset: { dx: 0, dy: 0 }
+        };
+        if (!state.customWires) state.customWires = [];
+        state.customWires.push(newWire);
+
+        drawSession = { points: [], cursorPt: null, snapTerm: null };
+        updateDrawStatusUI();
+        markDirty(true);
+        setDrawMode(false);
+        selectWire(newId);
+        applyStateToDOM();
+        showToast('✅ 已新增自定义连线，可编辑属性与拖动手柄');
+      }
+
+      svgEl.addEventListener('click', (e) => {
+        if (!drawMode) return;
+        if (e.detail >= 2) return; // 双击由 dblclick 完成，避免重复加点
+        e.stopPropagation();
+
+        const curPt = clientToSVG(e.clientX, e.clientY);
+        const snap = findNearestTerminal(curPt.x, curPt.y, 18);
+        const anchor = snap
+          ? { modId: snap.modId, x: snap.x, y: snap.y, termLabel: snap.label }
+          : {
+              x: snapToGrid ? Math.round(curPt.x / 10) * 10 : Math.round(curPt.x),
+              y: snapToGrid ? Math.round(curPt.y / 10) * 10 : Math.round(curPt.y)
+            };
+
+        if (!drawSession) drawSession = { points: [], cursorPt: curPt, snapTerm: snap };
+
+        if (drawSession.points.length > 0) {
+          const prev = resolveAnchor(drawSession.points[drawSession.points.length - 1]);
+          const curr = resolveAnchor(anchor);
+          if (Math.hypot(curr.x - prev.x, curr.y - prev.y) < 4) return;
+        }
+
+        drawSession.points.push(anchor);
+        updateDrawStatusUI();
+        renderEditorOverlay();
+
+        if (drawSession.points.length >= 2 && snap) {
+          finishCurrentDrawing();
+        }
+      });
+
+      svgEl.addEventListener('dblclick', (e) => {
+        if (!drawMode) return;
+        e.preventDefault();
+        e.stopPropagation();
+        if (drawSession && drawSession.points.length >= 2) {
+          finishCurrentDrawing();
+        } else if (drawSession && drawSession.points.length === 1) {
+          const curPt = clientToSVG(e.clientX, e.clientY);
+          const snap = findNearestTerminal(curPt.x, curPt.y, 18);
+          const anchor = snap
+            ? { modId: snap.modId, x: snap.x, y: snap.y, termLabel: snap.label }
+            : {
+                x: snapToGrid ? Math.round(curPt.x / 10) * 10 : Math.round(curPt.x),
+                y: snapToGrid ? Math.round(curPt.y / 10) * 10 : Math.round(curPt.y)
+              };
+          const prev = resolveAnchor(drawSession.points[0]);
+          const curr = resolveAnchor(anchor);
+          if (Math.hypot(curr.x - prev.x, curr.y - prev.y) >= 4) {
+            drawSession.points.push(anchor);
+            finishCurrentDrawing();
+          }
+        }
+      });
+
       svgEl.addEventListener('pointerover', (e) => {
-        if (!editMode || dragModuleState) return;
+        if (!editMode || drawMode || dragModuleState || dragHandleState) return;
         const modEl = e.target.closest('[data-module-id]');
-        if (modEl) showHoverOutline(modEl);
+        if (modEl) {
+          hoveredModuleEl = modEl;
+          renderEditorOverlay();
+        }
       });
 
       svgEl.addEventListener('pointerout', (e) => {
-        if (dragModuleState) return;
+        if (dragModuleState || dragHandleState) return;
         const modEl = e.target.closest('[data-module-id]');
         if (modEl && (!e.relatedTarget || !modEl.contains(e.relatedTarget))) {
-          overlayLayer.innerHTML = '';
+          hoveredModuleEl = null;
+          renderEditorOverlay();
         }
       });
 
@@ -2637,51 +4286,335 @@
         stage.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
       }
 
-      // ==================== 6. 连线高亮检视 ====================
+      // ==================== 8. 单线选中与交互式属性编辑面板 ====================
       const wireInspector = document.getElementById('wire-inspector');
 
-      function selectWireHighlight(wireId) {
-        highlightedWireId = highlightedWireId === wireId ? null : wireId;
-        svgEl.classList.toggle('has-wire-highlight', Boolean(highlightedWireId));
-        svgEl.querySelectorAll('.wire-group').forEach(g => {
-          g.classList.toggle('is-highlighted', g.getAttribute('data-wire-id') === highlightedWireId);
-        });
+      function selectWire(wireId) {
+        selectedWireId = wireId;
+        highlightedGroupId = null;
+        renderDynamicWires();
+        renderEditorOverlay();
+        syncWireInspectorUI();
+        syncSidebarHighlightChips();
+      }
 
+      function selectWireGroupHighlight(groupId) {
+        selectedWireId = null;
+        highlightedGroupId = highlightedGroupId === groupId ? null : groupId;
+        renderDynamicWires();
+        renderEditorOverlay();
+        syncWireInspectorUI();
+        syncSidebarHighlightChips();
+      }
+
+      function syncSidebarHighlightChips() {
         document.querySelectorAll('.wire-chip').forEach(ch => {
-          ch.classList.toggle('active', ch.getAttribute('data-wire-id') === highlightedWireId);
+          ch.classList.toggle('active', ch.getAttribute('data-wire-id') === highlightedGroupId);
+        });
+      }
+
+      function syncWireInspectorUI() {
+        if (!selectedWireId) {
+          wireInspector.classList.remove('visible');
+          return;
+        }
+        const desc = getWireDescriptor(selectedWireId);
+        if (!desc) {
+          wireInspector.classList.remove('visible');
+          return;
+        }
+
+        document.getElementById('inspector-dot').style.background = desc.color;
+        document.getElementById('inspector-name').textContent = desc.name;
+        const badge = document.getElementById('inspector-badge');
+        badge.textContent = desc.isCustom ? '自绘线' : '预设线';
+        badge.classList.toggle('custom', desc.isCustom);
+        document.getElementById('inspector-desc').textContent = desc.desc;
+
+        document.getElementById('wire-color-hex').textContent = desc.color.toLowerCase();
+        document.getElementById('wire-color-picker').value = normalizeHex(desc.color);
+        document.querySelectorAll('#wire-color-swatches .color-swatch').forEach(sw => {
+          sw.classList.toggle('active', sw.dataset.color.toLowerCase() === desc.color.toLowerCase());
         });
 
-        if (highlightedWireId) {
-          const meta = WIRE_GROUPS_META.find(w => w.id === highlightedWireId);
-          if (meta) {
-            document.getElementById('inspector-dot').style.background = state.colors[meta.colorKey];
-            document.getElementById('inspector-name').textContent = meta.name;
-            document.getElementById('inspector-desc').textContent = meta.desc;
-            const visible = state.layers[meta.layer];
-            document.getElementById('btn-inspector-toggle').textContent = visible ? '隐藏所属图层' : '显示所属图层';
-            wireInspector.classList.add('visible');
-          }
+        document.getElementById('wire-width-range').value = String(desc.strokeWidth);
+        document.getElementById('wire-width-val').textContent = desc.strokeWidth.toFixed(1) + 'px';
+
+        setSegActive('wire-linestyle-seg', desc.lineStyle);
+        setSegActive('wire-routemode-seg', desc.routeMode);
+        setSegActive('wire-endstyle-seg', desc.endStyle);
+
+        const lblInput = document.getElementById('wire-label-input');
+        if (document.activeElement !== lblInput) {
+          lblInput.value = desc.labelText || '';
+        }
+
+        const delBtn = document.getElementById('btn-wire-delete');
+        delBtn.textContent = desc.isCustom ? '删除连线' : (desc.hidden ? '还原显示' : '隐藏此线');
+
+        wireInspector.classList.add('visible');
+      }
+
+      function normalizeHex(col) {
+        if (/^#[0-9a-f]{6}$/i.test(col)) return col;
+        return '#0284c7';
+      }
+
+      function setSegActive(containerId, val) {
+        document.querySelectorAll(`#${containerId} .seg-btn`).forEach(b => {
+          b.classList.toggle('active', b.dataset.val === val);
+        });
+      }
+
+      function updateSelectedWireProp(mutator, recordUndo = true) {
+        if (!selectedWireId) return;
+        const desc = getWireDescriptor(selectedWireId);
+        if (!desc) return;
+        if (recordUndo) pushUndo();
+        if (desc.isCustom) {
+          mutator(desc.cw, desc);
         } else {
-          wireInspector.classList.remove('visible');
+          if (!state.wireEdits[desc.id]) state.wireEdits[desc.id] = {};
+          mutator(state.wireEdits[desc.id], desc);
+        }
+        markDirty(true);
+        applyStateToDOM();
+      }
+
+      function buildWireColorSwatches() {
+        const container = document.getElementById('wire-color-swatches');
+        const picker = document.getElementById('wire-color-picker');
+        SWATCH_COLORS.forEach(col => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'color-swatch';
+          btn.dataset.color = col;
+          btn.style.background = col;
+          btn.title = col;
+          btn.addEventListener('click', () => {
+            updateSelectedWireProp(target => { target.color = col; });
+          });
+          container.insertBefore(btn, picker);
+        });
+
+        picker.addEventListener('focus', () => { picker._before = picker.value; });
+        picker.addEventListener('input', (e) => {
+          updateSelectedWireProp(target => { target.color = e.target.value; }, false);
+        });
+        picker.addEventListener('change', (e) => {
+          if (picker._before && picker._before !== e.target.value && selectedWireId) {
+            const desc = getWireDescriptor(selectedWireId);
+            if (desc) {
+              const prev = cloneState(state);
+              if (desc.isCustom) {
+                const pCw = prev.customWires.find(w => w.id === desc.id);
+                if (pCw) pCw.color = picker._before;
+              } else {
+                if (!prev.wireEdits[desc.id]) prev.wireEdits[desc.id] = {};
+                prev.wireEdits[desc.id].color = picker._before;
+              }
+              undoStack.push(prev);
+              redoStack = [];
+              updateHistoryButtons();
+            }
+          }
+        });
+
+        const drawSw = document.getElementById('draw-color-swatches');
+        const drawPicker = document.getElementById('draw-color-picker');
+        SWATCH_COLORS.slice(0, 6).forEach(col => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'color-swatch' + (col === drawConfig.color ? ' active' : '');
+          btn.dataset.color = col;
+          btn.style.background = col;
+          btn.addEventListener('click', () => {
+            drawConfig.color = col;
+            drawPicker.value = col;
+            drawSw.querySelectorAll('.color-swatch').forEach(s => s.classList.toggle('active', s.dataset.color === col));
+          });
+          drawSw.appendChild(btn);
+        });
+        drawPicker.addEventListener('input', (e) => {
+          drawConfig.color = e.target.value;
+          drawSw.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+        });
+      }
+
+      const widthRange = document.getElementById('wire-width-range');
+      widthRange.addEventListener('pointerdown', () => { widthRange._before = widthRange.value; });
+      widthRange.addEventListener('input', (e) => {
+        const v = parseFloat(e.target.value);
+        updateSelectedWireProp(target => { target.strokeWidth = v; }, false);
+      });
+      widthRange.addEventListener('change', (e) => {
+        if (widthRange._before && widthRange._before !== e.target.value && selectedWireId) {
+          const desc = getWireDescriptor(selectedWireId);
+          if (desc) {
+            const prev = cloneState(state);
+            if (desc.isCustom) {
+              const pCw = prev.customWires.find(w => w.id === desc.id);
+              if (pCw) pCw.strokeWidth = parseFloat(widthRange._before);
+            } else {
+              if (!prev.wireEdits[desc.id]) prev.wireEdits[desc.id] = {};
+              prev.wireEdits[desc.id].strokeWidth = parseFloat(widthRange._before);
+            }
+            undoStack.push(prev);
+            redoStack = [];
+            updateHistoryButtons();
+          }
+        }
+      });
+
+      document.querySelectorAll('#wire-linestyle-seg .seg-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const val = btn.dataset.val;
+          updateSelectedWireProp(target => { target.lineStyle = val; });
+        });
+      });
+      document.querySelectorAll('#wire-routemode-seg .seg-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const val = btn.dataset.val;
+          updateSelectedWireProp(target => { target.routeMode = val; });
+        });
+      });
+      document.querySelectorAll('#wire-endstyle-seg .seg-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const val = btn.dataset.val;
+          updateSelectedWireProp(target => { target.endStyle = val; });
+        });
+      });
+
+      const wireLabelInput = document.getElementById('wire-label-input');
+      wireLabelInput.addEventListener('focus', () => { wireLabelInput._before = wireLabelInput.value; });
+      wireLabelInput.addEventListener('input', (e) => {
+        if (!selectedWireId) return;
+        const desc = getWireDescriptor(selectedWireId);
+        if (!desc) return;
+        const val = e.target.value;
+        if (!desc.isCustom && desc.preset.labelKey) {
+          state.texts[desc.preset.labelKey] = val;
+        } else if (desc.isCustom) {
+          desc.cw.labelText = val;
+        } else {
+          if (!state.wireEdits[desc.id]) state.wireEdits[desc.id] = {};
+          state.wireEdits[desc.id].labelText = val;
+        }
+        markDirty(true);
+        applyStateToDOM();
+      });
+      wireLabelInput.addEventListener('change', (e) => {
+        if (wireLabelInput._before !== undefined && wireLabelInput._before !== e.target.value && selectedWireId) {
+          const desc = getWireDescriptor(selectedWireId);
+          if (desc) {
+            const prev = cloneState(state);
+            if (!desc.isCustom && desc.preset.labelKey) {
+              prev.texts[desc.preset.labelKey] = wireLabelInput._before;
+            } else if (desc.isCustom) {
+              const pCw = prev.customWires.find(w => w.id === desc.id);
+              if (pCw) pCw.labelText = wireLabelInput._before;
+            } else {
+              if (!prev.wireEdits[desc.id]) prev.wireEdits[desc.id] = {};
+              prev.wireEdits[desc.id].labelText = wireLabelInput._before;
+            }
+            undoStack.push(prev);
+            redoStack = [];
+            updateHistoryButtons();
+          }
+        }
+      });
+
+      document.getElementById('btn-wire-label-clear').addEventListener('click', () => {
+        if (!selectedWireId) return;
+        const desc = getWireDescriptor(selectedWireId);
+        if (!desc) return;
+        pushUndo();
+        if (!desc.isCustom && desc.preset.labelKey) {
+          state.texts[desc.preset.labelKey] = '';
+        } else if (desc.isCustom) {
+          desc.cw.labelText = '';
+        } else {
+          if (!state.wireEdits[desc.id]) state.wireEdits[desc.id] = {};
+          state.wireEdits[desc.id].labelText = '';
+        }
+        markDirty(true);
+        applyStateToDOM();
+        showToast('已清空线上标签文字');
+      });
+
+      document.getElementById('btn-wire-label-center').addEventListener('click', () => {
+        updateSelectedWireProp(target => {
+          target.labelOffset = { dx: 0, dy: 0 };
+        });
+        showToast('已将标签复位居中');
+      });
+
+      document.getElementById('btn-wire-reset-route').addEventListener('click', () => {
+        updateSelectedWireProp(target => {
+          target.segOffsets = {};
+          target.labelOffset = { dx: 0, dy: 0 };
+          if (target.waypoints) target.waypoints = [];
+          if (target.customWaypoints) target.customWaypoints = [];
+          target.routeMode = 'orthogonal';
+        });
+        showToast('已还原此连线默认走线');
+      });
+
+      document.getElementById('btn-wire-reset-style').addEventListener('click', () => {
+        if (!selectedWireId) return;
+        const desc = getWireDescriptor(selectedWireId);
+        if (!desc) return;
+        pushUndo();
+        if (desc.isCustom) {
+          desc.cw.color = '#0284c7';
+          desc.cw.strokeWidth = 2.4;
+          desc.cw.lineStyle = 'solid';
+          desc.cw.endStyle = 'dot';
+        } else {
+          const curEdit = state.wireEdits[desc.id] || {};
+          delete curEdit.color;
+          delete curEdit.strokeWidth;
+          delete curEdit.lineStyle;
+          delete curEdit.endStyle;
+        }
+        markDirty(true);
+        applyStateToDOM();
+        showToast('已恢复此连线默认样式');
+      });
+
+      document.getElementById('btn-wire-delete').addEventListener('click', () => {
+        if (!selectedWireId) return;
+        deleteOrHideWire(selectedWireId);
+      });
+
+      function deleteOrHideWire(wireId) {
+        const desc = getWireDescriptor(wireId);
+        if (!desc) return;
+        pushUndo();
+        if (desc.isCustom) {
+          state.customWires = state.customWires.filter(w => w.id !== wireId);
+          selectedWireId = null;
+          markDirty(true);
+          applyStateToDOM();
+          showToast('🗑️ 已删除自定义连线');
+        } else {
+          if (!state.wireEdits[wireId]) state.wireEdits[wireId] = {};
+          state.wireEdits[wireId].hidden = !desc.hidden;
+          if (state.wireEdits[wireId].hidden) {
+            selectedWireId = null;
+            showToast('已隐藏该预设连线（可在右侧「连线」面板还原）');
+          } else {
+            showToast('已还原显示该预设连线');
+          }
+          markDirty(true);
+          applyStateToDOM();
         }
       }
 
-      document.getElementById('btn-close-inspector').addEventListener('click', () => selectWireHighlight(null));
-      document.getElementById('btn-inspector-clear').addEventListener('click', () => selectWireHighlight(null));
-      document.getElementById('btn-inspector-toggle').addEventListener('click', () => {
-        if (!highlightedWireId) return;
-        const meta = WIRE_GROUPS_META.find(w => w.id === highlightedWireId);
-        if (!meta) return;
-        pushUndo();
-        state.layers[meta.layer] = !state.layers[meta.layer];
-        markDirty(true);
-        applyStateToDOM();
-        selectWireHighlight(null);
-      });
+      document.getElementById('btn-close-inspector').addEventListener('click', () => selectWire(null));
 
-      // ==================== 7. 侧边栏 UI 构建与双向绑定 ====================
+      // ==================== 9. 侧边栏 UI 构建与双向绑定 ====================
       function buildSidebarControls() {
-        // 图层显隐列表
         const layerList = document.getElementById('layer-toggle-list');
         layerList.innerHTML = '';
         LAYER_META.forEach(item => {
@@ -2706,7 +4639,6 @@
           layerList.appendChild(lbl);
         });
 
-        // 连线高亮快捷标签
         const chipList = document.getElementById('wire-highlight-chips');
         chipList.innerHTML = '';
         WIRE_GROUPS_META.forEach(w => {
@@ -2714,11 +4646,10 @@
           btn.className = 'wire-chip';
           btn.setAttribute('data-wire-id', w.id);
           btn.innerHTML = `<span class="wire-dot" style="background:${state.colors[w.colorKey]};width:9px;height:9px;"></span>${w.name}`;
-          btn.addEventListener('click', () => selectWireHighlight(w.id));
+          btn.addEventListener('click', () => selectWireGroupHighlight(w.id));
           chipList.appendChild(btn);
         });
 
-        // 线色拾色器列表
         const colorList = document.getElementById('color-picker-list');
         colorList.innerHTML = '';
         COLOR_META.forEach(item => {
@@ -2754,7 +4685,6 @@
           colorList.appendChild(row);
         });
 
-        // 文本双向绑定
         document.querySelectorAll('[data-bind-text]').forEach(inp => {
           const key = inp.getAttribute('data-bind-text');
           inp.addEventListener('focus', () => { inp._before = state.texts[key]; });
@@ -2774,7 +4704,6 @@
           });
         });
 
-        // 模块位置列表
         const modList = document.getElementById('module-position-list');
         modList.innerHTML = '';
         MODULE_META.forEach(m => {
@@ -2800,6 +4729,58 @@
         });
       }
 
+      function renderSidebarWireLists() {
+        const customBox = document.getElementById('custom-wires-list');
+        const hiddenBox = document.getElementById('hidden-wires-list');
+        if (!customBox || !hiddenBox) return;
+
+        customBox.innerHTML = '';
+        const customWires = state.customWires || [];
+        if (customWires.length === 0) {
+          customBox.innerHTML = '<div style="font-size:11.5px;color:#64748b;padding:4px 2px;">暂无自绘连线，点击顶部「✏️ 画线」即可绘制。</div>';
+        } else {
+          customWires.forEach(cw => {
+            const row = document.createElement('div');
+            row.className = 'module-row';
+            row.innerHTML = `
+              <div class="module-row-meta" style="cursor:pointer;min-width:0;flex:1;">
+                <strong style="display:flex;align-items:center;gap:6px;"><span class="wire-dot" style="background:${cw.color};width:9px;height:9px;"></span>${cw.name || '自定义连线'}</strong>
+                <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${cw.start?.termLabel || '起点'} → ${cw.end?.termLabel || '终点'}</span>
+              </div>
+              <div style="display:flex;gap:4px;">
+                <button class="mini-btn" data-sel-cw="${cw.id}">编辑</button>
+                <button class="mini-btn danger" data-del-cw="${cw.id}">删</button>
+              </div>
+            `;
+            row.querySelector('[data-sel-cw]').addEventListener('click', () => selectWire(cw.id));
+            row.querySelector('[data-del-cw]').addEventListener('click', () => deleteOrHideWire(cw.id));
+            customBox.appendChild(row);
+          });
+        }
+
+        hiddenBox.innerHTML = '';
+        const hiddenPresets = getPresetWires().filter(p => state.wireEdits[p.id]?.hidden);
+        hiddenPresets.forEach(p => {
+          const row = document.createElement('div');
+          row.className = 'module-row';
+          row.innerHTML = `
+            <div class="module-row-meta">
+              <strong>已隐藏：${p.name}</strong>
+              <span>预设连线</span>
+            </div>
+            <button class="mini-btn" data-unhide="${p.id}">还原</button>
+          `;
+          row.querySelector('[data-unhide]').addEventListener('click', () => {
+            pushUndo();
+            state.wireEdits[p.id].hidden = false;
+            markDirty(true);
+            applyStateToDOM();
+            showToast(`已还原「${p.name}」`);
+          });
+          hiddenBox.appendChild(row);
+        });
+      }
+
       function syncSidebarInputs() {
         document.querySelectorAll('[data-bind-text]').forEach(inp => {
           const key = inp.getAttribute('data-bind-text');
@@ -2821,14 +4802,12 @@
           const o = state.offsets[m.id] || { dx: 0, dy: 0 };
           if (posEl) posEl.textContent = `dx: ${o.dx}, dy: ${o.dy}`;
         });
-        // 更新芯片色点
         document.querySelectorAll('.wire-chip').forEach(ch => {
           const w = WIRE_GROUPS_META.find(item => item.id === ch.getAttribute('data-wire-id'));
           if (w) ch.querySelector('.wire-dot').style.background = state.colors[w.colorKey];
         });
       }
 
-      // 侧边栏 Tab 切换
       document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -2838,7 +4817,6 @@
         });
       });
 
-      // 侧边栏收起/展开
       const sidebar = document.getElementById('sidebar');
       const btnToggleSidebar = document.getElementById('btn-toggle-sidebar');
       function toggleSidebar(force) {
@@ -2850,26 +4828,66 @@
       btnToggleSidebar.addEventListener('click', () => toggleSidebar());
       document.getElementById('btn-collapse-sidebar').addEventListener('click', () => toggleSidebar(false));
 
-      // ==================== 8. 顶部工具栏按钮与导出功能 ====================
-      // 模式切换
+      // ==================== 10. 顶部工具栏按钮与导出功能 ====================
       const btnModeEdit = document.getElementById('btn-mode-edit');
       const btnModeView = document.getElementById('btn-mode-view');
+      const btnModeDraw = document.getElementById('btn-mode-draw');
+
       function setEditMode(isEdit) {
+        drawMode = false;
+        drawSession = null;
         editMode = isEdit;
         document.body.classList.toggle('edit-mode', isEdit);
+        document.body.classList.remove('draw-mode');
         btnModeEdit.classList.toggle('active', isEdit);
         btnModeView.classList.toggle('active', !isEdit);
+        btnModeDraw.classList.remove('active');
         viewport.classList.toggle('panning', !isEdit);
-        if (!isEdit) overlayLayer.innerHTML = '';
+        if (!isEdit) hoveredModuleEl = null;
+        renderEditorOverlay();
       }
+
+      function setDrawMode(isDraw) {
+        if (!isDraw) {
+          setEditMode(true);
+          return;
+        }
+        drawMode = true;
+        editMode = true;
+        drawSession = { points: [], cursorPt: null, snapTerm: null };
+        selectedWireId = null;
+        highlightedGroupId = null;
+        hoveredModuleEl = null;
+        wireInspector.classList.remove('visible');
+
+        document.body.classList.add('edit-mode', 'draw-mode');
+        btnModeDraw.classList.add('active');
+        btnModeEdit.classList.remove('active');
+        btnModeView.classList.remove('active');
+        viewport.classList.remove('panning');
+
+        updateDrawStatusUI();
+        renderDynamicWires();
+        renderEditorOverlay();
+      }
+
       btnModeEdit.addEventListener('click', () => setEditMode(true));
       btnModeView.addEventListener('click', () => setEditMode(false));
+      btnModeDraw.addEventListener('click', () => setDrawMode(!drawMode));
+      document.getElementById('btn-draw-exit').addEventListener('click', () => setDrawMode(false));
+      document.getElementById('btn-draw-finish').addEventListener('click', () => finishCurrentDrawing());
 
-      // 撤销重做
+      document.querySelectorAll('#draw-route-seg .seg-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          drawConfig.routeMode = btn.dataset.drawRoute;
+          document.querySelectorAll('#draw-route-seg .seg-btn').forEach(b => b.classList.toggle('active', b === btn));
+          renderEditorOverlay();
+        });
+      });
+
       document.getElementById('btn-undo').addEventListener('click', undo);
       document.getElementById('btn-redo').addEventListener('click', redo);
 
-      // 缩放控制
       document.getElementById('btn-zoom-in').addEventListener('click', () => setZoom(zoom + 0.12));
       document.getElementById('btn-zoom-out').addEventListener('click', () => setZoom(zoom - 0.12));
       document.getElementById('btn-zoom-fit').addEventListener('click', fitToViewport);
@@ -2877,7 +4895,6 @@
         panX = 0; panY = 0; setZoom(1);
       });
 
-      // 网格吸附 & 全部位置复位 & 全部图层显示 & 恢复线色
       document.getElementById('chk-snap-grid').addEventListener('change', (e) => {
         snapToGrid = e.target.checked;
       });
@@ -2895,7 +4912,14 @@
         applyStateToDOM();
         showToast('已显示全部连线与图层');
       });
-      document.getElementById('btn-clear-highlight').addEventListener('click', () => selectWireHighlight(null));
+      document.getElementById('btn-restore-all-wires').addEventListener('click', () => {
+        pushUndo();
+        Object.values(state.wireEdits).forEach(ed => { if (ed) ed.hidden = false; });
+        markDirty(true);
+        applyStateToDOM();
+        showToast('已还原全部隐藏的预设连线');
+      });
+      document.getElementById('btn-clear-highlight').addEventListener('click', () => selectWire(null));
       document.getElementById('btn-reset-colors').addEventListener('click', () => {
         pushUndo();
         state.colors = { ...DEFAULT_COLORS };
@@ -2904,7 +4928,7 @@
         showToast('已恢复默认标准线色');
       });
 
-      // 导出高清 PNG (纯前端 SVG -> 2x Canvas -> PNG 下载)
+      // 导出高清 PNG (纯前端 SVG -> 2x Canvas -> PNG 下载，自动隐藏手柄与辅助层)
       document.getElementById('btn-export-png').addEventListener('click', () => {
         try {
           const clone = svgEl.cloneNode(true);
@@ -2914,11 +4938,10 @@
           clone.classList.remove('has-wire-highlight');
           clone.querySelectorAll('.is-highlighted').forEach(n => n.classList.remove('is-highlighted'));
 
-          // 清空编辑器辅助外框
           const ov = clone.querySelector('#editor-overlay-layer');
           if (ov) ov.innerHTML = '';
+          clone.querySelectorAll('.wire-hit-area, .wire-halo').forEach(n => n.remove());
 
-          // 注入字体样式以确保 SVG 光栅化时中文字体一致
           const styleNode = document.createElementNS(NS, 'style');
           styleNode.textContent = 'text, tspan { font-family: "Noto Sans CJK SC", "Microsoft YaHei", "PingFang SC", "Helvetica Neue", Arial, sans-serif; }';
           clone.insertBefore(styleNode, clone.firstChild);
@@ -2930,7 +4953,7 @@
 
           const img = new Image();
           img.onload = () => {
-            const scale = 2; // 3200 x 2320 高清输出
+            const scale = 2;
             const canvas = document.createElement('canvas');
             canvas.width = 1600 * scale;
             canvas.height = 1160 * scale;
@@ -2972,7 +4995,7 @@
       document.getElementById('btn-save-local').addEventListener('click', () => {
         try {
           const payload = {
-            version: 2,
+            version: 3,
             savedAt: new Date().toISOString(),
             state
           };
@@ -2987,7 +5010,7 @@
       // 导出 JSON 配置
       document.getElementById('btn-export-json').addEventListener('click', () => {
         const payload = {
-          version: 2,
+          version: 3,
           exportedAt: new Date().toISOString(),
           state
         };
@@ -3022,8 +5045,12 @@
               texts: { ...DEFAULT_TEXTS, ...incoming.texts },
               offsets: { ...JSON.parse(JSON.stringify(DEFAULT_OFFSETS)), ...(incoming.offsets || {}) },
               layers: { ...DEFAULT_LAYERS, ...(incoming.layers || {}) },
-              colors: { ...DEFAULT_COLORS, ...incoming.colors }
+              colors: { ...DEFAULT_COLORS, ...incoming.colors },
+              wireEdits: incoming.wireEdits || {},
+              customWires: Array.isArray(incoming.customWires) ? incoming.customWires : []
             };
+            selectedWireId = null;
+            highlightedGroupId = null;
             markDirty(true);
             applyStateToDOM();
             showToast('📂 JSON 配置已成功导入');
@@ -3035,12 +5062,10 @@
         reader.readAsText(file);
       });
 
-      // 打印 / PDF
       document.getElementById('btn-print').addEventListener('click', () => {
         window.print();
       });
 
-      // 恢复默认弹窗
       const resetModal = document.getElementById('reset-modal');
       document.getElementById('btn-reset-default').addEventListener('click', () => {
         resetModal.classList.add('open');
@@ -3052,7 +5077,9 @@
         pushUndo();
         state = createDefaultState();
         localStorage.removeItem(STORAGE_KEY);
-        highlightedWireId = null;
+        selectedWireId = null;
+        highlightedGroupId = null;
+        setDrawMode(false);
         wireInspector.classList.remove('visible');
         markDirty(false);
         document.getElementById('save-status-pill').textContent = '已恢复标准默认';
@@ -3061,13 +5088,39 @@
         showToast('🔄 已恢复至标准默认图纸');
       });
 
-      // ==================== 9. 快捷键 & Toast & 启动初始化 ====================
+      // ==================== 11. 快捷键 & Toast & 启动初始化 ====================
       window.addEventListener('keydown', (e) => {
-        if (e.code === 'Space' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+        const isTyping = document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA');
+
+        if (e.code === 'Space' && !isTyping) {
           spacePressed = true;
           viewport.classList.add('panning');
         }
-        if ((e.ctrlKey || e.metaKey) && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+        if (e.key === 'Escape' && !isTyping) {
+          if (drawMode) {
+            if (drawSession && drawSession.points.length > 0) {
+              drawSession = { points: [], cursorPt: drawSession.cursorPt, snapTerm: drawSession.snapTerm };
+              updateDrawStatusUI();
+              renderEditorOverlay();
+              showToast('已取消当前正在绘制的连线');
+            } else {
+              setDrawMode(false);
+            }
+          } else if (selectedWireId || highlightedGroupId) {
+            selectWire(null);
+          }
+        }
+        if (e.key === 'Enter' && drawMode && !isTyping) {
+          if (drawSession && drawSession.points.length >= 2) {
+            e.preventDefault();
+            finishCurrentDrawing();
+          }
+        }
+        if ((e.key === 'Delete' || e.key === 'Backspace') && selectedWireId && !isTyping && !drawMode) {
+          e.preventDefault();
+          deleteOrHideWire(selectedWireId);
+        }
+        if ((e.ctrlKey || e.metaKey) && !isTyping) {
           if (e.key.toLowerCase() === 'z' && !e.shiftKey) {
             e.preventDefault();
             undo();
@@ -3084,7 +5137,7 @@
       window.addEventListener('keyup', (e) => {
         if (e.code === 'Space') {
           spacePressed = false;
-          if (editMode && !panState) viewport.classList.remove('panning');
+          if ((editMode || drawMode) && !panState) viewport.classList.remove('panning');
         }
       });
 
@@ -3101,7 +5154,6 @@
         }, 2400);
       }
 
-      // 加载 LocalStorage 中的保存
       function loadSavedFromLocal() {
         try {
           const raw = localStorage.getItem(STORAGE_KEY);
@@ -3113,7 +5165,9 @@
               texts: { ...DEFAULT_TEXTS, ...saved.texts },
               offsets: { ...JSON.parse(JSON.stringify(DEFAULT_OFFSETS)), ...(saved.offsets || {}) },
               layers: { ...DEFAULT_LAYERS, ...(saved.layers || {}) },
-              colors: { ...DEFAULT_COLORS, ...(saved.colors || {}) }
+              colors: { ...DEFAULT_COLORS, ...(saved.colors || {}) },
+              wireEdits: saved.wireEdits || {},
+              customWires: Array.isArray(saved.customWires) ? saved.customWires : []
             };
             document.getElementById('save-status-pill').textContent = '已加载本地保存';
           }
@@ -3124,6 +5178,7 @@
 
       // 初始化执行
       loadSavedFromLocal();
+      buildWireColorSwatches();
       buildSidebarControls();
       applyStateToDOM();
       fitToViewport();
