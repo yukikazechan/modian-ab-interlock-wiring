@@ -1431,7 +1431,7 @@
                   <tspan data-edit-key="mainTitleSub" fill="#0284c7" font-size="24" font-weight="700"> · 双门互锁接线标准图</tspan>
                 </text>
                 <!-- 副标题技术概要 -->
-                <text data-edit-key="subtitle" x="800" y="80" text-anchor="middle" fill="#475569" font-size="12.5" font-weight="500">门禁 NO/COM 并联接入【内门读卡】按钮/GND ｜ 开门按钮 COM/NO 并联接入【外门读卡】按钮/GND ｜ 门禁 Sensor/GND 接入对应门磁 COM/NO ｜ 全开/复位开关常开接 GND</text>
+                <text data-edit-key="subtitle" x="800" y="80" text-anchor="middle" fill="#475569" font-size="12.5" font-weight="500">门禁 NO/COM 并联接入【内门读卡】按钮/GND ｜ 开门按钮 COM/NO 并联接入【外门读卡】按钮/GND ｜ 内/外门禁 Sensor/GND 全部并联接入【外门磁力锁】门磁 COM/NO ｜ 全开/复位开关常开接 GND</text>
 
                 <!-- 右上角版本标牌 -->
                 <rect x="1420" y="31" width="146" height="48" rx="6" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.2" />
@@ -1960,19 +1960,19 @@
                 <text data-edit-key="legComGreen" x="678" y="1114" fill="#334155" font-size="11" font-weight="600">门磁 COM (门磁M+)</text>
 
                 <line id="leg-line-sensorPurple" x1="808" y1="1109" x2="834" y2="1109" stroke="#7c3aed" stroke-width="3" />
-                <text data-edit-key="legSensorPurple" x="840" y="1114" fill="#5b21b6" font-size="11" font-weight="700">门禁 Sensor → 门磁COM</text>
+                <text data-edit-key="legSensorPurple" x="840" y="1114" fill="#5b21b6" font-size="11" font-weight="700">门禁 Sensor → 外门锁COM</text>
 
-                <line id="leg-line-gndCyan" x1="992" y1="1109" x2="1018" y2="1109" stroke="#0e7490" stroke-width="3" />
-                <text data-edit-key="legGndCyan" x="1024" y="1114" fill="#0e7490" font-size="11" font-weight="700">门禁 GND → 门磁NO</text>
+                <line id="leg-line-gndCyan" x1="1010" y1="1109" x2="1036" y2="1109" stroke="#0e7490" stroke-width="3" />
+                <text data-edit-key="legGndCyan" x="1042" y="1114" fill="#0e7490" font-size="11" font-weight="700">门禁 GND → 外门锁NO</text>
 
-                <line id="leg-line-fullOpenOrange" x1="1152" y1="1109" x2="1178" y2="1109" stroke="#ea580c" stroke-width="3" />
-                <text data-edit-key="legFullOpenOrange" x="1184" y="1114" fill="#c2410c" font-size="11" font-weight="700">全开开关</text>
+                <line id="leg-line-fullOpenOrange" x1="1190" y1="1109" x2="1216" y2="1109" stroke="#ea580c" stroke-width="3" />
+                <text data-edit-key="legFullOpenOrange" x="1222" y="1114" fill="#c2410c" font-size="11" font-weight="700">全开开关</text>
 
-                <line id="leg-line-resetIndigo" x1="1248" y1="1109" x2="1274" y2="1109" stroke="#4f46e5" stroke-width="3" />
-                <text data-edit-key="legResetIndigo" x="1280" y="1114" fill="#4338ca" font-size="11" font-weight="700">复位开关</text>
+                <line id="leg-line-resetIndigo" x1="1286" y1="1109" x2="1312" y2="1109" stroke="#4f46e5" stroke-width="3" />
+                <text data-edit-key="legResetIndigo" x="1318" y="1114" fill="#4338ca" font-size="11" font-weight="700">复位开关</text>
 
-                <line id="leg-line-netBlue" x1="1344" y1="1109" x2="1370" y2="1109" stroke="#0284c7" stroke-width="2.6" stroke-dasharray="5 3" />
-                <text data-edit-key="legNetBlue" x="1376" y="1114" fill="#0369a1" font-size="11" font-weight="600">网线直连</text>
+                <line id="leg-line-netBlue" x1="1382" y1="1109" x2="1408" y2="1109" stroke="#0284c7" stroke-width="2.6" stroke-dasharray="5 3" />
+                <text data-edit-key="legNetBlue" x="1414" y="1114" fill="#0369a1" font-size="11" font-weight="600">网线直连</text>
               </g>
 
               <!-- 悬停/拖拽外框辅助层（导出 PNG 时自动排除） -->
@@ -2155,7 +2155,7 @@
     (function () {
       'use strict';
 
-      const STORAGE_KEY = 'modian_ab_interlock_editor_v2';
+      const STORAGE_KEY = 'modian_ab_interlock_editor_v3';
 
       // ==================== 1. 默认状态与元数据定义 ====================
       const DEFAULT_COLORS = {
@@ -2180,8 +2180,8 @@
         { key: 'gndBlack', name: 'GND公共地 / RS485-B', desc: 'GND公共地 · RS485-B · 按钮NO/门禁COM' },
         { key: 'noBlue', name: '门磁 NO / 网线', desc: '门磁 NO (GND) · 网线直连' },
         { key: 'comGreen', name: '门磁 COM (门磁M+)', desc: '控制器门磁M+ → 磁力锁 COM' },
-        { key: 'sensorPurple', name: '门禁 Sensor 紫线', desc: '门禁 Sensor → 门磁 COM' },
-        { key: 'gndCyan', name: '门禁 GND 青蓝线', desc: '门禁 GND → 门磁 NO' },
+        { key: 'sensorPurple', name: '门禁 Sensor 紫线', desc: '内/外门禁 Sensor 并联 → 外门磁力锁门磁 COM' },
+        { key: 'gndCyan', name: '门禁 GND 青蓝线', desc: '内/外门禁 GND 并联 → 外门磁力锁门磁 NO' },
         { key: 'fullOpenOrange', name: '全开开关橙线', desc: '室内操作键盘全开 → 全开开关 (NO)' },
         { key: 'resetIndigo', name: '复位开关靛蓝线', desc: '室内操作键盘复位 → 复位开关 (NO)' }
       ];
@@ -2204,7 +2204,7 @@
         { key: 'cameraNet', name: '摄像机供电与网络直连', desc: '5V1A Type-C 供电与 RJ45 交换机网线' },
         { key: 'powerSupply', name: '12V2A 门禁与主机供电', desc: '内/外门禁电源及主机 +12V 直流供电' },
         { key: 'doorSignal', name: '开门触发并联信号线', desc: '门禁 NO/COM → 内门；出门按钮 → 外门' },
-        { key: 'doorSensor', name: '门磁状态检测线 (Sensor/GND)', desc: '门禁 Sensor/GND → 对应门磁 COM/NO' },
+        { key: 'doorSensor', name: '门磁状态检测线 (Sensor/GND)', desc: '内/外门禁 Sensor/GND 并联 → 外门磁力锁门磁 COM/NO' },
         { key: 'lockOutput', name: '控制器 → 磁力锁输出线', desc: '内门锁 / 外门锁 4 线控制输出' },
         { key: 'controlSwitches', name: '室内全开/复位开关及连线', desc: '右侧功能开关箱 + 全开/复位/GND连线' },
         { key: 'corridorBox', name: '走线走廊框与标注', desc: '高净空电气规范走线走廊虚线框' },
@@ -2241,8 +2241,8 @@
         { id: 'lock-inner', layer: 'lockOutput', name: '控制器 → 内门磁力锁 (4线)', colorKey: 'comGreen', desc: '控制器内门锁 GND/M+/GND/L+ 分别接内门磁力锁 NO/COM/12V-/12V+。' },
         { id: 'lock-outer', layer: 'lockOutput', name: '控制器 → 外门磁力锁 (4线)', colorKey: 'comGreen', desc: '控制器外门锁 GND/M+/GND/L+ 分别接外门磁力锁 NO/COM/12V-/12V+。' },
         { id: 'ctrl-pwr', layer: 'powerSupply', name: '主机 +12V 直流供电', colorKey: 'powerRed', desc: '右下主机电源适配器接入控制器 +12V 独立圆孔 DC 电源口。' },
-        { id: 'sensor-inner', layer: 'doorSensor', name: '内门禁 Sensor/GND → 门磁', colorKey: 'sensorPurple', desc: '内门门禁 Sensor 接内门磁力锁门磁 COM，GND 接门磁 NO。' },
-        { id: 'sensor-outer', layer: 'doorSensor', name: '外门禁 Sensor/GND → 门磁', colorKey: 'sensorPurple', desc: '外门门禁 Sensor 接外门磁力锁门磁 COM，GND 接门磁 NO。' }
+        { id: 'sensor-inner', layer: 'doorSensor', name: '内门禁 Sensor/GND → 外门磁力锁', colorKey: 'sensorPurple', desc: '内门门禁 Sensor 接外门磁力锁门磁 COM，GND 接外门磁力锁门磁 NO。' },
+        { id: 'sensor-outer', layer: 'doorSensor', name: '外门禁 Sensor/GND → 外门磁力锁', colorKey: 'sensorPurple', desc: '外门门禁 Sensor 接外门磁力锁门磁 COM，GND 接外门磁力锁门磁 NO。' }
       ];
 
       // 设备端子吸附注册表（所有坐标均绑定 modId，拖拽设备后自动跟随）
@@ -2355,10 +2355,10 @@
         wireReset: '复位 → 复位开关 (NO)',
         wireSwitchGnd: '全开/复位开关共用回接 → GND',
         wireCtrlPwr: '主机 +12V 直流供电',
-        wireSensorInCom: '内门禁 Sensor → 门磁 COM',
-        wireSensorInNo: '内门禁 GND → 门磁 NO',
-        wireSensorOutCom: '外门禁 Sensor → 门磁 COM',
-        wireSensorOutNo: '外门禁 GND → 门磁 NO'
+        wireSensorInCom: '内门禁 Sensor → 外门磁力锁 COM',
+        wireSensorInNo: '内门禁 GND → 外门磁力锁 NO',
+        wireSensorOutCom: '外门禁 Sensor → 外门磁力锁 COM',
+        wireSensorOutNo: '外门禁 GND → 外门磁力锁 NO'
       };
 
       svgEl.querySelectorAll('[data-edit-key]').forEach(node => {
@@ -3053,21 +3053,21 @@
               });
             }
           },
-          // 内门禁 Sensor / GND (前层)
+          // 内门禁 Sensor / GND (前层，接入外门磁力锁门磁 COM / NO)
           {
             id: 'sensor-in-com', groupId: 'sensor-inner', layer: 'doorSensor', front: true,
-            name: '内门禁 Sensor → 门磁 COM', desc: '内门门禁 Sensor 接内门磁力锁门磁 COM。',
+            name: '内门禁 Sensor → 外门磁力锁门磁 COM', desc: '内门门禁 Sensor 并联接入外门磁力锁门磁 COM。',
             defaultColor: c.sensorPurple, defaultWidth: 2.4, defaultLineStyle: 'solid', defaultEndStyle: 'dot',
-            labelKey: 'wireSensorInCom', labelBorder: '#a78bfa', labelTextColor: '#5b21b6', labelFontSize: '10.5', labelW: 188, labelH: 20,
+            labelKey: 'wireSensorInCom', labelBorder: '#a78bfa', labelTextColor: '#5b21b6', labelFontSize: '10.5', labelW: 204, labelH: 20,
             build(edit) {
               const sSen = pt('access-inner', 602, 328);
-              const lCom = pt('maglock-inner', 476, 958);
-              const botYDefault = lCom.y - 50;
+              const lCom = pt('maglock-outer', 776, 958);
+              const botYDefault = lCom.y - 82;
               return buildTwoPtWire(sSen, { x: lCom.x, y: botYDefault + (edit.segOffsets?.botY || 0) }, edit, (so) => {
-                const corrX = 366 + state.offsets['maglock-inner'].dx * 0.4 + (so.corrX || 0);
+                const corrX = 366 + state.offsets['maglock-outer'].dx * 0.4 + (so.corrX || 0);
                 const topY = sSen.y + 16 + (so.topY || 0);
-                const botY = lCom.y - 50 + (so.botY || 0);
-                const lblX = corrX - 108;
+                const botY = lCom.y - 82 + (so.botY || 0);
+                const lblX = corrX - 118;
                 return {
                   pts: [sSen, { x: sSen.x, y: topY }, { x: corrX, y: topY }, { x: corrX, y: botY }, { x: lCom.x, y: botY }],
                   handles: [
@@ -3075,25 +3075,25 @@
                     { type: 'seg', segKey: 'corrX', axis: 'x', x: corrX, y: (topY + botY) / 2 },
                     { type: 'seg', segKey: 'botY', axis: 'y', x: (corrX + lCom.x) / 2, y: botY }
                   ],
-                  labelAnchor: { x: lblX, y: botY - 1, leaderTo: { x: corrX, y: botY } }
+                  labelAnchor: { x: lblX, y: botY, leaderTo: { x: corrX, y: botY } }
                 };
               });
             }
           },
           {
             id: 'sensor-in-no', groupId: 'sensor-inner', layer: 'doorSensor', front: true,
-            name: '内门禁 GND → 门磁 NO', desc: '内门门禁 GND 接内门磁力锁门磁 NO。',
+            name: '内门禁 GND → 外门磁力锁门磁 NO', desc: '内门门禁 GND 并联接入外门磁力锁门磁 NO。',
             defaultColor: c.gndCyan, defaultWidth: 2.4, defaultLineStyle: 'solid', defaultEndStyle: 'dot',
-            labelKey: 'wireSensorInNo', labelBorder: '#67e8f9', labelFontSize: '10.5', labelW: 188, labelH: 20,
+            labelKey: 'wireSensorInNo', labelBorder: '#67e8f9', labelFontSize: '10.5', labelW: 204, labelH: 20,
             build(edit) {
               const sGnd = pt('access-inner', 636, 328);
-              const lNo = pt('maglock-inner', 438, 958);
-              const botYDefault = lNo.y - 34;
+              const lNo = pt('maglock-outer', 738, 958);
+              const botYDefault = lNo.y - 60;
               return buildTwoPtWire(sGnd, { x: lNo.x, y: botYDefault + (edit.segOffsets?.botY || 0) }, edit, (so) => {
-                const corrX = 382 + state.offsets['maglock-inner'].dx * 0.4 + (so.corrX || 0);
+                const corrX = 382 + state.offsets['maglock-outer'].dx * 0.4 + (so.corrX || 0);
                 const topY = sGnd.y + 28 + (so.topY || 0);
-                const botY = lNo.y - 34 + (so.botY || 0);
-                const lblX = corrX - 124;
+                const botY = lNo.y - 60 + (so.botY || 0);
+                const lblX = corrX - 134;
                 return {
                   pts: [sGnd, { x: sGnd.x, y: topY }, { x: corrX, y: topY }, { x: corrX, y: botY }, { x: lNo.x, y: botY }],
                   handles: [
@@ -3106,21 +3106,21 @@
               });
             }
           },
-          // 外门禁 Sensor / GND (前层)
+          // 外门禁 Sensor / GND (前层，接入外门磁力锁门磁 COM / NO)
           {
             id: 'sensor-out-com', groupId: 'sensor-outer', layer: 'doorSensor', front: true,
-            name: '外门禁 Sensor → 门磁 COM', desc: '外门门禁 Sensor 接外门磁力锁门磁 COM。',
+            name: '外门禁 Sensor → 外门磁力锁门磁 COM', desc: '外门门禁 Sensor 并联接入外门磁力锁门磁 COM。',
             defaultColor: c.sensorPurple, defaultWidth: 2.4, defaultLineStyle: 'solid', defaultEndStyle: 'dot',
-            labelKey: 'wireSensorOutCom', labelBorder: '#a78bfa', labelTextColor: '#5b21b6', labelFontSize: '10.5', labelW: 188, labelH: 20,
+            labelKey: 'wireSensorOutCom', labelBorder: '#a78bfa', labelTextColor: '#5b21b6', labelFontSize: '10.5', labelW: 204, labelH: 20,
             build(edit) {
               const sSen = pt('access-outer', 874, 328);
               const lCom = pt('maglock-outer', 776, 958);
-              const botYDefault = lCom.y - 50;
+              const botYDefault = lCom.y - 38;
               return buildTwoPtWire(sSen, { x: lCom.x, y: botYDefault + (edit.segOffsets?.botY || 0) }, edit, (so) => {
                 const corrX = 1146 + state.offsets['maglock-outer'].dx * 0.4 + (so.corrX || 0);
                 const topY = sSen.y + 16 + (so.topY || 0);
-                const botY = lCom.y - 50 + (so.botY || 0);
-                const lblX = corrX - 120;
+                const botY = lCom.y - 38 + (so.botY || 0);
+                const lblX = corrX - 114;
                 return {
                   pts: [sSen, { x: sSen.x, y: topY }, { x: corrX, y: topY }, { x: corrX, y: botY }, { x: lCom.x, y: botY }],
                   handles: [
@@ -3128,25 +3128,25 @@
                     { type: 'seg', segKey: 'corrX', axis: 'x', x: corrX, y: (topY + botY) / 2 },
                     { type: 'seg', segKey: 'botY', axis: 'y', x: (corrX + lCom.x) / 2, y: botY }
                   ],
-                  labelAnchor: { x: lblX, y: botY - 1 }
+                  labelAnchor: { x: lblX, y: botY }
                 };
               });
             }
           },
           {
             id: 'sensor-out-no', groupId: 'sensor-outer', layer: 'doorSensor', front: true,
-            name: '外门禁 GND → 门磁 NO', desc: '外门门禁 GND 接外门磁力锁门磁 NO。',
+            name: '外门禁 GND → 外门磁力锁门磁 NO', desc: '外门门禁 GND 并联接入外门磁力锁门磁 NO。',
             defaultColor: c.gndCyan, defaultWidth: 2.4, defaultLineStyle: 'solid', defaultEndStyle: 'dot',
-            labelKey: 'wireSensorOutNo', labelBorder: '#67e8f9', labelFontSize: '10.5', labelW: 188, labelH: 20,
+            labelKey: 'wireSensorOutNo', labelBorder: '#67e8f9', labelFontSize: '10.5', labelW: 204, labelH: 20,
             build(edit) {
               const sGnd = pt('access-outer', 908, 328);
               const lNo = pt('maglock-outer', 738, 958);
-              const botYDefault = lNo.y - 34;
+              const botYDefault = lNo.y - 16;
               return buildTwoPtWire(sGnd, { x: lNo.x, y: botYDefault + (edit.segOffsets?.botY || 0) }, edit, (so) => {
                 const corrX = 1162 + state.offsets['maglock-outer'].dx * 0.4 + (so.corrX || 0);
                 const topY = sGnd.y + 28 + (so.topY || 0);
-                const botY = lNo.y - 34 + (so.botY || 0);
-                const lblX = corrX - 136;
+                const botY = lNo.y - 16 + (so.botY || 0);
+                const lblX = corrX - 130;
                 return {
                   pts: [sGnd, { x: sGnd.x, y: topY }, { x: corrX, y: topY }, { x: corrX, y: botY }, { x: lNo.x, y: botY }],
                   handles: [
@@ -4995,7 +4995,7 @@
       document.getElementById('btn-save-local').addEventListener('click', () => {
         try {
           const payload = {
-            version: 3,
+            version: 4,
             savedAt: new Date().toISOString(),
             state
           };
@@ -5010,7 +5010,7 @@
       // 导出 JSON 配置
       document.getElementById('btn-export-json').addEventListener('click', () => {
         const payload = {
-          version: 3,
+          version: 4,
           exportedAt: new Date().toISOString(),
           state
         };
